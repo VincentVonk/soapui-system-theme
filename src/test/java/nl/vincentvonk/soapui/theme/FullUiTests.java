@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Vincent Vonk
+
+package nl.vincentvonk.soapui.theme;
+
+import com.eviware.soapui.SoapUI;
+import com.eviware.soapui.StandaloneSoapUICore;
+import com.eviware.soapui.config.SoapuiSettingsDocumentConfig;
+import com.eviware.soapui.config.SoapuiWorkspaceDocumentConfig;
+import com.eviware.soapui.settings.UISettings;
+import com.eviware.soapui.settings.VersionUpdateSettings;
+import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.nio.file.*;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+
+/** Starts the actual SoapUI desktop, using an isolated profile and only synthetic local projects. */
+public final class FullUiTests {
+    private static Path output;
+    private static JDialog preferences, newProject;
+    public static void main(String[] args) {
+        Thread watchdog = new Thread(() -> { try { Thread.sleep(45000); } catch (InterruptedException e) { return; }
+            System.err.println("Full SoapUI UI test timed out"); System.exit(2); }, "ui-test-watchdog");
+        watchdog.setDaemon(true); watchdog.start();
+        try { run(args); System.exit(0); }
+        catch (Throwable e) { e.printStackTrace(); System.exit(1); }
+    }
+    private static void run(String[] args) throws Exception {
+        System.setProperty("java.util.prefs.PreferencesFactory", "nl.vincentvonk.soapui.theme.MemoryPreferencesFactory");
+        output = Path.of(args[0]); Files.createDirectories(output);
+        Path home = Path.of(System.getProperty("user.home")); Files.createDirectories(home);
+        Path settings = home.resolve("soapui-settings.xml");
+        SoapuiSettingsDocumentConfig settingsDoc = SoapuiSettingsDocumentConfig.Factory.newInstance();
+        settingsDoc.addNewSoapuiSettings(); settingsDoc.save(settings.toFile());
+        SoapuiWorkspaceDocumentConfig workspaceDoc = SoapuiWorkspaceDocumentConfig.Factory.newInstance();
+        workspaceDoc.addNewSoapuiWorkspace().setCollectInfoForSupport(false);
+        workspaceDoc.save(home.resolve("default-soapui-workspace.xml").toFile());
+        System.setProperty("soapui.browser.disabled", "true");
+        StandaloneSoapUICore core = new StandaloneSoapUICore(settings.toString()) {
+            @Override public void prepareUI() {
+                super.prepareUI();
+                SoapUI.getFrame().setFocusableWindowState(false);
+                SoapUI.getFrame().setAutoRequestFocus(false);
+                SoapUI.getFrame().setLocation(-10000,-10000);
+            }
+        };
+        core.getSettings().setBoolean(UISettings.DISABLE_ANALYTICS, true);
+        core.getSettings().setBoolean(UISettings.SHOULD_DISPLAY_ANALYTICS_DIALOG, false);
+        core.getSettings().setBoolean(UISettings.SHOW_STAY_TUNED_DIALOG, false);
+        core.getSettings().setBoolean(UISettings.SHOW_ENDPOINT_EXPLORER_ON_START, false);
+        core.getSettings().setBoolean(UISettings.SHOW_STARTUP_PAGE, false);
+        core.getSettings().setBoolean(VersionUpdateSettings.AUTO_CHECK_VERSION_UPDATE, false);
+        Toolkit.getDefaultToolkit().addAWTEventListener(e -> {
+            // Configure ownerless dialogs too, before their native peer can request keyboard focus.
+            Component source=e.getSource() instanceof Component ? (Component)e.getSource() : null;
+            Window window=source instanceof Window ? (Window)source : source==null ? null : SwingUtilities.getWindowAncestor(source);
+            if(window!=null) { window.setFocusableWindowState(false);window.setAutoRequestFocus(false);window.setLocation(-10000,-10000); }
+        }, AWTEvent.WINDOW_EVENT_MASK | AWTEvent.CONTAINER_EVENT_MASK | AWTEvent.HIERARCHY_EVENT_MASK);
+        SwingUtilities.invokeAndWait(() -> {
+            try { SoapUI.startSoapUI(new String[0], "SoapUI 5.10.0 — isolated plugin test", core); }
+            catch (Exception e) { throw new RuntimeException(e); }
+            SoapUI.getFrame().setSize(1200,800); SoapUI.getFrame().validate();
+        });
+        waitForMenu();
+        SwingUtilities.invokeAndWait(() -> {
+            try { snapshot("soapui-light.png");
+                com.eviware.soapui.impl.wsdl.WsdlProject project=(com.eviware.soapui.impl.wsdl.WsdlProject)
+                    SoapUI.getWorkspace().createProject("Theme example",(java.io.File)null);
+                project.addNewTestSuite("Local regression").addNewTestCase("Example case");
+                com.eviware.soapui.support.UISupport.showDesktopPanel(project);
+                SoapUI.getFrame().validate(); snapshot("soapui-project-light.png");
+                menu().getItem(2).doClick(); }
+            catch (Exception e) { throw new RuntimeException(e); }
+        });
+        Thread.sleep(600);
+        SwingUtilities.invokeAndWait(() -> {
+            try { snapshot("soapui-dark.png");
+                BufferedImage image=ImageIO.read(output.resolve("soapui-dark.png").toFile());
+                StringBuilder dump = new StringBuilder(); dump(SoapUI.getFrame(),dump,0);
+                Files.writeString(output.resolve("component-tree.txt"),dump);
+                checkToolbars(SoapUI.getFrame(),image);
+                checkWindowControls(SoapUI.getFrame());
+                JInternalFrame internal=findInternalFrame(SoapUI.getFrame());
+                if(internal==null)throw new AssertionError("No actual internal frame");
+                internal.setMaximum(true);SoapUI.getFrame().validate();
+                checkWindowControls(SoapUI.getFrame());snapshot("soapui-maximized-dark.png");
+                internal.setMaximum(false);SoapUI.getFrame().validate();checkWindowControls(SoapUI.getFrame());
+                buildDialogs();
+            } catch (Exception e) { throw new RuntimeException(e); }
+        });
+        Thread.sleep(500);
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                checkHeaders(preferences);checkHeaders(newProject);
+                snapshot(preferences,"preferences-dark.png");snapshot(newProject,"new-soap-project-dark.png");
+                checkAbout();
+                menu().getItem(1).doClick(); snapshot("soapui-restored.png");
+                snapshot(preferences,"preferences-restored.png");snapshot(newProject,"new-soap-project-restored.png");
+                preferences.dispose();newProject.dispose();
+                SoapUI.getFrame().dispose();
+            } catch (Exception e) { throw new RuntimeException(e); }
+        });
+        System.out.println("PASS: actual SoapUI 5.10.0 desktop, About, Preferences, New SOAP Project, new dialog events and restoration (isolated profile)");
+    }
+    private static void checkAbout() throws Exception {
+        JMenuItem about=null;JMenuBar bar=SoapUI.getFrame().getJMenuBar();
+        for(int i=0;i<bar.getMenuCount();i++) {
+            JMenu menu=bar.getMenu(i);if(menu==null || !"Help".equals(menu.getText()))continue;
+            for(int j=0;j<menu.getItemCount();j++)if(menu.getItem(j)!=null&&"About SoapUI".equals(menu.getItem(j).getText()))about=menu.getItem(j);
+        }
+        if(about==null)throw new AssertionError("About action absent");
+        Throwable[] error={null};boolean[] checked={false};int[] attempts={0};
+        Timer timer=new Timer(250,null);
+        timer.addActionListener(event -> {
+            for(Window window:Window.getWindows())if(window instanceof JDialog && window.isShowing()&&"About SoapUI".equals(((JDialog)window).getTitle())) {
+                try {
+                    JEditorPane pane=findEditor(window);
+                    if(pane==null || !new Color(0x1d2025).equals(pane.getBackground())) { if(++attempts[0]<12)return;throw new AssertionError("About did not become dark"); }
+                    snapshot(window,"about-dark.png");
+                    String html=pane.getText();if(html.contains("background-image")||!html.contains("smartbear.com"))throw new AssertionError("About splash or attribution incorrect");
+                    menu().getItem(1).doClick();snapshot(window,"about-restored.png");
+                    if(!pane.getText().contains("background-image"))throw new AssertionError("About original splash not restored");
+                    menu().getItem(2).doClick();checked[0]=true;
+                }catch(Throwable e){error[0]=e;}
+                finally{timer.stop();window.dispose();}
+                return;
+            }
+        });
+        timer.start();about.doClick();timer.stop();
+        if(error[0]!=null)throw new AssertionError("Actual About dialog failed",error[0]);
+        if(!checked[0])throw new AssertionError("Actual About dialog was not checked");
+    }
+    private static JEditorPane findEditor(Component c) {
+        if(c instanceof JEditorPane)return (JEditorPane)c;
+        if(c instanceof Container)for(Component child:((Container)c).getComponents()) {JEditorPane pane=findEditor(child);if(pane!=null)return pane;}
+        return null;
+    }
+    private static Object field(Object object,String name) throws Exception {
+        java.lang.reflect.Field field=object.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(object);
+    }
+    private static void build(Object object) throws Exception {
+        java.lang.reflect.Method method=object.getClass().getDeclaredMethod("buildDialog");method.setAccessible(true);method.invoke(object);
+    }
+    private static void buildDialogs() throws Exception {
+        com.eviware.soapui.actions.SoapUIPreferencesAction action=com.eviware.soapui.actions.SoapUIPreferencesAction.getInstance();
+        build(action);Object config=field(action,"dialog");build(config);preferences=(JDialog)field(config,"dialog");
+        for(com.eviware.soapui.actions.Prefs pref:action.getPrefs())pref.setFormValues(SoapUI.getSettings());
+        com.eviware.x.impl.swing.JFormDialog form=(com.eviware.x.impl.swing.JFormDialog)
+            com.eviware.x.form.support.ADialogBuilder.buildDialog(com.eviware.soapui.impl.actions.NewWsdlProjectAction.Form.class);
+        newProject=form.getDialog();
+        for(JDialog dialog:new JDialog[]{preferences,newProject}) {
+            dialog.setModal(false);dialog.setFocusableWindowState(false);dialog.setAutoRequestFocus(false);
+            if(dialog==preferences)dialog.setSize(1000,700);else dialog.pack();
+            dialog.setLocation(-10000,-10000);dialog.setVisible(true);
+        }
+    }
+    private static void checkHeaders(Component c) throws Exception {
+        if(c instanceof com.eviware.soapui.support.DescriptionPanel) {
+            BufferedImage image=new BufferedImage(c.getWidth(),c.getHeight(),BufferedImage.TYPE_INT_RGB);
+            Graphics2D g=image.createGraphics();c.printAll(g);g.dispose();Color corner=new Color(image.getRGB(1,1));
+            if(corner.getRed()>80 || corner.getGreen()>80 || corner.getBlue()>80)
+                throw new AssertionError("Real SoapUI dialog header remains bright");
+        }
+        if(c instanceof Container)for(Component child:((Container)c).getComponents())checkHeaders(child);
+    }
+    private static JInternalFrame findInternalFrame(Component c) {
+        if(c instanceof JInternalFrame)return (JInternalFrame)c;
+        if(c instanceof Container)for(Component child:((Container)c).getComponents()) {
+            JInternalFrame frame=findInternalFrame(child);if(frame!=null)return frame;
+        }
+        return null;
+    }
+    private static void checkWindowControls(Component c) {
+        if(c instanceof AbstractButton && c.getClass().getName().contains("BasicInternalFrameTitlePane$NoFocusButton")) {
+            Icon icon=((AbstractButton)c).getIcon();
+            if(icon==null||!icon.getClass().getName().endsWith(".TitleControlIcon"))throw new AssertionError("Internal-window control still has a legacy icon");
+            BufferedImage image=new BufferedImage(16,16,BufferedImage.TYPE_INT_RGB);
+            Graphics2D g=image.createGraphics();icon.paintIcon(c,g,0,0);g.dispose();Color face=new Color(image.getRGB(1,1));
+            if(face.getRed()>80||face.getGreen()>80||face.getBlue()>80)throw new AssertionError("Internal-window control face remains bright");
+        }
+        if(c instanceof Container)for(Component child:((Container)c).getComponents())checkWindowControls(child);
+    }
+    private static JMenu menu() {
+        JMenuBar bar = SoapUI.getFrame().getJMenuBar();
+        for (int i=0;i<bar.getMenuCount();i++) if (bar.getMenu(i)!=null && "Theme".equals(bar.getMenu(i).getText())) return bar.getMenu(i);
+        return null;
+    }
+    private static void waitForMenu() throws Exception {
+        long until = System.nanoTime()+10_000_000_000L;
+        while (System.nanoTime()<until) {
+            boolean[] ready={false}; SwingUtilities.invokeAndWait(() -> ready[0]=menu()!=null);
+            if (ready[0]) return; Thread.sleep(50);
+        }
+        throw new AssertionError("The packaged plugin did not add a Theme menu to SoapUI");
+    }
+    private static void snapshot(String name) throws Exception {
+        snapshot(SoapUI.getFrame(),name);
+    }
+    private static void snapshot(Window frame,String name) throws Exception {
+        BufferedImage image = new BufferedImage(frame.getWidth(),frame.getHeight(),BufferedImage.TYPE_INT_RGB);
+        Graphics2D g=image.createGraphics(); frame.printAll(g); g.dispose(); ImageIO.write(image,"png",output.resolve(name).toFile());
+    }
+    private static void dump(Component c,StringBuilder text,int depth) {
+        if (!c.isVisible()) return;
+        text.append(" ".repeat(depth)).append(c.getClass().getName()).append(" ").append(c.getBounds())
+            .append(" bg=").append(c.getBackground()).append(" fg=").append(c.getForeground()).append('\n');
+        if (c instanceof Container) for (Component child:((Container)c).getComponents()) dump(child,text,depth+1);
+    }
+    private static void checkToolbars(Component c,BufferedImage image) {
+        if(!c.isShowing())return;
+        if(c instanceof JToolBar && c.getClass().getName().startsWith("com.eviware.soapui.") && c.getWidth()>10 && c.getHeight()>10) {
+            Point p=SwingUtilities.convertPoint(c,0,0,SoapUI.getFrame());int bright=0,total=0;
+            for(int y=0;y<c.getHeight();y++)for(int x=0;x<c.getWidth();x++) {
+                if(p.x+x<0 || p.y+y<0 || p.x+x>=image.getWidth() || p.y+y>=image.getHeight())continue;
+                Color color=new Color(image.getRGB(p.x+x,p.y+y));total++;
+                if(color.getRed()>220 && color.getGreen()>220 && color.getBlue()>220)bright++;
+            }
+            if(total>0 && (double)bright/total>.18)throw new AssertionError("Toolbar still has a bright background: "+c.getClass().getName()+"; bounds="+c.getBounds()+"; parent="+c.getParent().getClass().getName()+"; layout="+c.getParent().getLayout());
+        }
+        if(c instanceof Container)for(Component child:((Container)c).getComponents())checkToolbars(child,image);
+    }
+}
