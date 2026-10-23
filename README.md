@@ -1,120 +1,120 @@
 # SoapUI System Theme 0.3.1
 
-Een Windows-plugin voor **SoapUI Open Source 5.10.0** die automatisch de lichte of donkere **Windows-appmodus** volgt. De standaardinstelling is **Follow Windows**.
-**Onafhankelijke, niet-officiële plugin.** Dit project is niet verbonden aan, gesponsord door, goedgekeurd door of onderhouden door SmartBear. SoapUI en SmartBear zijn namen/merken van hun respectieve rechthebbenden en worden gebruikt om compatibiliteit aan te geven.
+A Windows plugin for **SoapUI Open Source 5.10.0** that automatically follows the light or dark **Windows app theme**. The default setting is **Follow Windows**.
 
-De eigen projectcode valt onder de [MIT-licentie](LICENSE). Bibliotheken van SoapUI houden hun eigen licenties; zie [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Ontwikkeld met ondersteuning van OpenAI Codex/ChatGPT.
+**Independent, unofficial plugin.** This project is not affiliated with, sponsored by, endorsed by, or maintained by SmartBear. SoapUI and SmartBear names and marks belong to their respective owners and are used to identify compatibility.
 
-Dit GitHub-pakket bevat de broncode. Bouw de plugin eerst met `build.ps1`; een JDK 17 of nieuwer en een bestaande SoapUI 5.10.0-installatie zijn nodig. Voor de eerste upload en de lokale clone: [GitHub-instructies](docs/GITHUB_SETUP.md).
+Original project code is provided under the [MIT license](LICENSE). SoapUI libraries retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Developed with assistance from OpenAI Codex/ChatGPT.
 
-## Installeren (geen administrator nodig)
+This GitHub package contains the source code. Build the plugin first with `build.ps1`; a JDK 17 or newer and an existing SoapUI 5.10.0 installation are required. For the initial upload and local clone, see the [GitHub setup instructions](docs/GITHUB_SETUP.md).
 
-1. Bouw de plugin met `build.ps1` (zie **Zelf bouwen**) en sluit daarna SoapUI. Als je een complete binaire release gebruikt, pak die volledig uit.
-2. Open met **Win+R** de map `%USERPROFILE%\.soapuios\plugins`. Maak de map aan als die nog niet bestaat.
-3. Verwijder de eerder geïnstalleerde `soapui-system-theme-*.jar`, bijvoorbeeld versie 0.3.0. Er mag maar één versie van System Theme in deze map staan.
-4. Kopieer `dist\soapui-system-theme-0.3.1.jar` naar die map.
-5. Start SoapUI Open Source 5.10.0. Bovenaan verschijnt het menu **Theme**.
-6. Laat **Theme > Follow Windows** geselecteerd.
+## Installation (no administrator privileges required)
 
-Als alternatief voer je vanuit de uitgepakte map het PowerShell-commando `.\Install.ps1` uit. Bij een beleid dat scripts blokkeert, gebruik je de handmatige kopieerstappen hierboven.
+1. Build the plugin with `build.ps1` (see [Building from source](#building-from-source)), then close SoapUI. If you are using a complete binary release, extract it first.
+2. Press **Win+R** and open `%USERPROFILE%\.soapuios\plugins`. Create the directory if it does not exist.
+3. Remove any previously installed `soapui-system-theme-*.jar`, such as version 0.3.0. Keep only one version of System Theme in this directory.
+4. Copy `dist\soapui-system-theme-0.3.1.jar` into that directory.
+5. Start SoapUI Open Source 5.10.0. A **Theme** menu appears at the top.
+6. Leave **Theme > Follow Windows** selected.
 
-Er worden geen SoapUI-installatiebestanden of Windows-instellingen aangepast. De plugin heeft geen eigen downloadstap en gebruikt alleen bibliotheken die SoapUI al meelevert.
+Alternatively, run `.\Install.ps1` in PowerShell from the extracted directory. If your execution policy blocks scripts, use the manual copy steps above.
 
-## Dag en nacht
+No SoapUI installation files or Windows settings are modified. The plugin does not download dependencies; it uses libraries already included with SoapUI.
 
-Je bestaande Windows-scheduler blijft de tijden bepalen. De plugin leest elke **3 seconden** `AppsUseLightTheme` in je gebruikersregister. Donker is waarde `0`, licht is waarde `1`. Hij volgt dus **de appmodus**, niet uitsluitend de kleur van de taakbalk of het Windows-systeemthema.
+## Day and night
 
-Wanneer Dark Mode X / Auto Dark Mode de appmodus van Windows verandert, schakelt een al geopende SoapUI mee. Een herstart is daarvoor niet nodig. Tijdens opstarten kan de gewone lichte interface kort zichtbaar zijn voordat de eerste meting binnen is.
+Your existing Windows scheduler controls the switching times. Every **3 seconds**, the plugin reads `AppsUseLightTheme` from your user registry. A value of `0` means dark; `1` means light. It follows **the app theme**, rather than just the taskbar color or Windows system theme.
 
-Als de Windows-instelling tijdelijk niet gelezen kan worden, houdt SoapUI zijn huidige weergave en probeert de plugin het opnieuw. Je kunt ondertussen handmatig kiezen via **Theme**.
+When Dark Mode X / Auto Dark Mode changes the Windows app theme, an open SoapUI window switches along with it. No restart is required. During startup, the default light interface may briefly appear before the first reading is available.
+
+If the Windows setting cannot be read temporarily, SoapUI keeps its current appearance and the plugin retries. You can choose a theme manually through **Theme** in the meantime.
 
 ## Menu
 
-| Keuze | Gedrag |
+| Option | Behavior |
 |---|---|
-| Follow Windows | Volgt de Windows-appmodus. |
-| Light (SoapUI default) | Herstelt de oorspronkelijke SoapUI-weergave en negeert de Windows-appmodus. |
-| Dark | Houdt SoapUI donker, ook als Windows licht staat. |
+| Follow Windows | Follows the Windows app theme. |
+| Light (SoapUI default) | Restores the original SoapUI appearance and ignores the Windows app theme. |
+| Dark | Keeps SoapUI dark even when Windows uses a light theme. |
 
-Je keuze wordt bewaard in `%USERPROFILE%\.soapuios\system-theme.properties`. De waarde van `mode` is `SYSTEM`, `LIGHT` of `DARK`. Het bestand wordt bij een volgende start gelezen; gebruik het menu voor direct omschakelen.
+Your choice is saved in `%USERPROFILE%\.soapuios\system-theme.properties`. The `mode` value is `SYSTEM`, `LIGHT`, or `DARK`. The file is read at the next startup; use the menu to switch immediately.
 
-## Wat deze versie aanpast
+## What this version changes
 
-Nieuw in 0.3.1: de pictogrammen voor minimaliseren, maximaliseren, terugzetten en sluiten van SoapUI's interne vensters krijgen donkere vlakken met lichte symbolen. Dit werkt ook na maximaliseren en terugzetten. De echte knoppen en hun acties blijven behouden; lichtmodus herstelt de oorspronkelijke pictogrammen. Dit betreft de interne SoapUI-vensters, niet de native Windows-titelbalk.
+New in 0.3.1: the minimize, maximize, restore, and close icons on SoapUI's internal windows use dark backgrounds with light symbols. This also works after maximizing and restoring a window. The original buttons and actions are preserved; light mode restores the original icons. This applies to internal SoapUI windows, rather than the native Windows title bar.
 
-Toegevoegd in 0.3.0:
+Added in 0.3.0:
 
-- Donkere, leesbare koppen in Preferences, New SOAP Project en andere dialogen met SoapUI's DescriptionPanel. Het verloop gebruikt intern de voorgrondkleur als schilderkleur; in donkerstand wordt dat verloop tijdelijk vervangen door een effen achtergrond.
-- About SoapUI krijgt een donker informatiepaneel. Versie, auteursrecht, builddatum en hyperlinks blijven behouden. De witte achtergrondafbeelding wordt in donkerstand weggelaten. Bij lichtmodus komt het oorspronkelijke HTML-document met die afbeelding terug.
-- Het standaard helpicoon krijgt een donker vlak en een lichtblauw vraagteken. De oorspronkelijke actie en afmetingen blijven behouden; lichtmodus herstelt het oorspronkelijke icoon.
-- Endpoint Explorer en de bekende online/lokale SoapUI-startpagina krijgen een apart donker JavaFX-webstylesheet. Dit verandert geen HTML-documenten, invoerwaarden of JavaScript-acties en laadt de pagina niet opnieuw. Bij lichtmodus wordt het oorspronkelijke gebruikersstylesheet hersteld. Andere webpagina's, zoals OAuth-loginpagina's, vallen buiten deze ondersteuning.
+- Dark, readable headings in Preferences, New SOAP Project, and other dialogs using SoapUI's DescriptionPanel. Its gradient internally uses the foreground color for painting; dark mode temporarily replaces that gradient with a solid background.
+- A dark information panel in About SoapUI. Version information, copyright, build date, and hyperlinks are preserved. The white background image is omitted in dark mode. Light mode restores the original HTML document and image.
+- A dark background and light blue question mark for the standard help icon. Its original action and dimensions are preserved; light mode restores the original icon.
+- A separate dark JavaFX web stylesheet for Endpoint Explorer and the known online/local SoapUI start page. This does not change HTML documents, input values, or JavaScript actions, and does not reload the page. Light mode restores the original user stylesheet. Other web pages, such as OAuth login pages, are outside this support.
 
-De verbeteringen uit 0.2.0 blijven behouden: de hoofdwerkbalk, navigatorbalk, inspector- en logbalken en de balk in het projectoverzicht krijgen een donkere achtergrond, ondanks SoapUI's vaste witte schildercode. De echte balken en knoppen blijven bestaan, met dezelfde acties en indeling. In lichtmodus worden de tijdelijke tekenlagen weer verwijderd.
+The improvements from 0.2.0 are retained: the main toolbar, navigator bar, inspector and log bars, and project overview bar receive a dark background despite SoapUI's hardcoded white painting. The original bars and buttons keep their actions and layout. Light mode removes the temporary painting layers.
 
-Donkere, neutrale pixels in pictogrammen krijgen meer contrast zonder het bronpictogram te wijzigen. Gekleurde signalen, zoals rode en groene symbolen, behouden hun kleur. Tabellen blijven donker als SoapUI achteraf lichte rijstrepen wil toepassen. Ook de tree-renderer en scrollbalken worden aangepast en bij lichtmodus hersteld.
+Dark, neutral pixels in icons receive more contrast without modifying the source icon. Colored indicators, such as red and green symbols, retain their colors. Tables stay dark when SoapUI later tries to apply light row stripes. The tree renderer and scrollbars are also adjusted and restored in light mode.
 
-- Standaard Swing-onderdelen: panelen, menu's, tekstvelden, boomweergave, tabellen en dialoogonderdelen.
-- De XML/JSON/Groovy/SQL-editors die SoapUI met RSyntaxTextArea opbouwt: achtergrond, tekst, syntaxkleuren, cursor, selectie en regelnummers.
-- De witte hoofdbalk die SoapUI zelf schildert: in donkerstand komt er een standaard Swing-menubalk voor terug, met dezelfde menu's en acties. Bij lichtmodus wordt de oorspronkelijke balk teruggezet.
-- Nieuw geopende Swing-vensters en componenten worden tijdens donkerstand ook aangepast.
-- Bestaande request-/response- en scriptdocumenten, cursorselecties en projectmodellen worden niet opnieuw opgebouwd. Alleen het niet-bewerkbare About-informatiepaneel gebruikt tijdelijk een apart weergavedocument.
+- Standard Swing components: panels, menus, text fields, trees, tables, and dialog components.
+- SoapUI's RSyntaxTextArea XML/JSON/Groovy/SQL editors: background, text, syntax colors, caret, selection, and line numbers.
+- The white main menu bar painted by SoapUI: dark mode temporarily substitutes a standard Swing menu bar with the same menus and actions. Light mode restores the original bar.
+- Newly opened Swing windows and components are also styled while dark mode is active.
+- Existing request/response and script documents, caret selections, and project models are not rebuilt. Only the read-only About information panel temporarily uses a separate display document.
 
-De lichte weergave bewaart bestaande componentkleuren. Componenten die pas tijdens donkerstand worden gemaakt, krijgen bij terugschakelen de lichte standaardkleuren waar een eerdere lichte toestand ontbreekt.
+Light mode preserves existing component colors. Components created during dark mode receive the default light colors when switching back if no previous light state exists.
 
-## Grenzen van versie 0.3.1
+## Limitations of version 0.3.1
 
-Dit is een eigen plugin, geen door SmartBear onderhouden uitbreiding. De build en tests gebruiken de echte SoapUI 5.10.0-bibliotheken en de meegeleverde Java 17-runtime. Naast losse componenten wordt nu de echte SoapUI-desktop met een synthetisch project opgestart en visueel gecontroleerd. Niet ieder SoapUI-scherm of iedere andere plugin is afzonderlijk getest.
+This is an independent plugin, rather than an extension maintained by SmartBear. The build and tests use the actual SoapUI 5.10.0 libraries and its bundled Java 17 runtime. In addition to individual component tests, the actual SoapUI desktop is launched with a synthetic project and checked visually. Not every SoapUI screen or third-party plugin has been tested individually.
 
-Sommige oude pictogrammen, grafieken, onderdelen met eigen schildercode, native Windows-vensters en andere ingesloten webpagina's kunnen hun eigen kleuren behouden. De native titelbalk wordt door Windows/Java getekend; de plugin vervangt geen vensterdecoratie. Logo's en afbeeldingen in webpagina's worden niet omgekleurd. Kleuren met een betekenis, zoals statuskleuren, worden zoveel mogelijk behouden. Je kunt altijd naar **Light** terugschakelen.
+Some legacy icons, charts, components with custom painting, native Windows dialogs, and other embedded web pages may retain their own colors. The native title bar is drawn by Windows/Java; the plugin does not replace window decorations. Logos and images in web pages are not recolored. Colors with specific meanings, such as status colors, are preserved wherever possible. You can always switch back to **Light**.
 
-Endpoint Explorer en de lokale offline-startpagina zijn met echte JavaFX-rendering getest. De online startpagina is via haar bekende SoapUI-URL ondersteund, maar kon in deze testomgeving niet via internet worden geladen en is dus niet volledig visueel gevalideerd. Als SmartBear die pagina of URL wijzigt, kan aanvullende opmaak nodig zijn. Tijdens opstarten of paginaladen kan kort de lichte weergave zichtbaar zijn voordat de plugin/het stylesheet actief is.
+Endpoint Explorer and the local offline start page have been tested with actual JavaFX rendering. The online start page is supported through its known SoapUI URL, but could not be loaded over the internet in this test environment, so it has not been fully validated visually. Changes to that page or URL by SmartBear may require additional styling. A light appearance may briefly be visible during startup or page loading before the plugin or stylesheet becomes active.
 
-De plugin is voor Windows en vereist SoapUI Open Source 5.10.0 of hoger volgens de pluginmetadata. **Alleen 5.10.0 is gevalideerd.** Compatibiliteit met latere versies moet opnieuw worden gecontroleerd. Er is geen afzonderlijke ondersteuning voor ReadyAPI.
+The plugin targets Windows and requires SoapUI Open Source 5.10.0 or later according to its plugin metadata. **Only 5.10.0 has been validated.** Compatibility with later versions needs to be checked again. ReadyAPI is not separately supported.
 
-## Verwijderen
+## Uninstalling
 
-Sluit SoapUI, verwijder `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.1.jar` en start SoapUI opnieuw. Je kunt ook `.\Uninstall.ps1` gebruiken. Alleen de eigen JAR wordt verwijderd. De kleine voorkeurenfile blijft bewaard; je mag `system-theme.properties` ook verwijderen.
+Close SoapUI, remove `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.1.jar`, and start SoapUI again. You can also use `.\Uninstall.ps1`. Only this plugin's JAR is removed. The small preferences file is retained; you may also remove `system-theme.properties`.
 
-## Zelf bouwen
+## Building from source
 
-Nodig: Windows, een desktop-sessie, een **JDK 17 of nieuwer** en SoapUI Open Source 5.10.0. Maven en internettoegang zijn niet nodig.
+Requirements: Windows, a desktop session, a **JDK 17 or newer**, and SoapUI Open Source 5.10.0. Maven and internet access are not required.
 
 ```powershell
 .\build.ps1 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0'
 ```
 
-De build probeert de JDK en SoapUI automatisch te vinden; met alleen `.\build.ps1` volstaat dat vaak. Geef desgewenst `-JdkHome` mee met de map van je geïnstalleerde JDK. `SoapUiHome` is de map met `bin` en `lib`. Een bestaande installatie kan na een upgrade nog een oudere mapnaam hebben; de build controleert daarom het bestand `bin\soapui-5.10.0.jar`.
+The build tries to detect the JDK and SoapUI automatically; running just `.\build.ps1` is often sufficient. If needed, pass `-JdkHome` with the directory of your installed JDK. `SoapUiHome` is the directory containing `bin` and `lib`. An existing installation may keep an older directory name after an upgrade, so the build checks for `bin\soapui-5.10.0.jar`.
 
-De build maakt `dist\soapui-system-theme-0.3.1.jar`. `--release 17` bewaakt compatibiliteit met SoapUI's Java 17. De tests gebruiken de JRE van SoapUI zelf. Ze werken in `build\test-home` en `build\ui-home` en wijzigen je echte Windows-thema of je SoapUI-projecten niet. Voor grafische regressietests worden testvensters buiten het scherm geplaatst, zonder toetsenbordfocus, en naar PNG gerenderd. De echte desktoptest gebruikt een tijdelijk voorkeurenprofiel en een testimplementatie van Java Preferences, zodat het gebruikersregister niet voor Java-voorkeuren wordt gebruikt. De oude JGoodies-versie van SoapUI vraagt een desktop-sessie, ook bij het renderen naar een afbeelding.
+The build creates `dist\soapui-system-theme-0.3.1.jar`. The `--release 17` option ensures compatibility with SoapUI's Java 17. Tests use SoapUI's own JRE and work in `build\test-home` and `build\ui-home`; they do not change your actual Windows theme or SoapUI projects. For graphical regression tests, test windows are placed offscreen without keyboard focus and rendered to PNG. The actual desktop test uses a temporary preferences profile and a test implementation of Java Preferences, so your user registry is not used for Java preferences. SoapUI's legacy JGoodies version requires a desktop session, even when rendering to an image.
 
-## Pakketinhoud
+## Package contents
 
-- `dist/`: de installeerbare plugin-JAR wordt hier door de build gemaakt; deze map zit niet in het broncodepakket.
-- `src/main/java/`: volledige broncode.
-- `src/test/java/`: regressie- en integratietests.
-- `build.ps1`: lokale build zonder downloads.
-- `test-ui.ps1`: test de echte SoapUI-desktop met de gebouwde plugin en een afzonderlijk testprofiel.
-- `Install.ps1`, `Uninstall.ps1`: optionele installatiehulpen.
-- `TEST-REPORT.md`: uitgevoerde controles en beperkingen.
-- `build/`: de tests maken hier hun tijdelijke profielen en PNG-beelden; deze bestanden staan buiten Git en het broncodepakket.
-- `LICENSE`, `THIRD_PARTY_NOTICES.md`, `licenses/`: projectlicentie en afzonderlijke bibliotheekvermeldingen.
-- `.gitignore`, `.gitattributes`: uitsluitingen en consistente regeleinden voor Git.
-- `docs/GITHUB_SETUP.md`, `CHANGELOG.md`: GitHub-instructies en versiehistorie.
+- `dist/`: the build creates the installable plugin JAR here; this directory is not included in the source package.
+- `src/main/java/`: complete source code.
+- `src/test/java/`: regression and integration tests.
+- `build.ps1`: local build without downloads.
+- `test-ui.ps1`: tests the actual SoapUI desktop with the built plugin and a separate test profile.
+- `Install.ps1`, `Uninstall.ps1`: optional installation helpers.
+- `TEST-REPORT.md`: checks performed and their limitations.
+- `build/`: tests create temporary profiles and PNG images here; these files are excluded from Git and the source package.
+- `LICENSE`, `THIRD_PARTY_NOTICES.md`, `licenses/`: project license and separate library notices.
+- `.gitignore`, `.gitattributes`: exclusions and consistent line endings for Git.
+- `docs/GITHUB_SETUP.md`, `CHANGELOG.md`: GitHub instructions and version history.
 
-## Technische bronnen
+## Technical references
 
-- [SoapUI 5.10.0-pluginloader](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/plugins/PluginLoader.java)
-- [SoapUI-plugininterface](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/plugins/Plugin.java)
-- [SoapUI-standaardthema](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/StandaloneSoapUICore.java)
-- [SoapUI-interface en vaste witte achtergronden](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/SoapUI.java)
-- [SoapUI-dialoogkoppen](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/support/DescriptionPanel.java)
-- [JavaFX-browsercomponent](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/support/components/EnabledWebViewBasedBrowserComponent.java)
+- [SoapUI 5.10.0 plugin loader](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/plugins/PluginLoader.java)
+- [SoapUI plugin interface](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/plugins/Plugin.java)
+- [SoapUI default theme](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/StandaloneSoapUICore.java)
+- [SoapUI interface and hardcoded white backgrounds](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/SoapUI.java)
+- [SoapUI dialog headings](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/support/DescriptionPanel.java)
+- [JavaFX browser component](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/support/components/EnabledWebViewBasedBrowserComponent.java)
 
-Er worden geen SoapUI- of andere derdepartij-JAR's met dit pakket verspreid.
+No SoapUI or other third-party JARs are distributed with this package.
 
+## Publishing and contributing
 
-## Publiceren en bijdragen
+Upload the extracted source files to the root of your repository. The ZIP contains no Git history, SoapUI installation files, or generated binaries. Keep LICENSE, THIRD_PARTY_NOTICES.md, and licenses/ with the source code. A locally built plugin JAR also includes these notices under META-INF/.
 
-Upload de uitgepakte bronbestanden naar de hoofdmap van je repository. De ZIP bevat geen Git-geschiedenis, installatiebestanden van SoapUI of gegenereerde binaries. Bewaar LICENSE, THIRD_PARTY_NOTICES.md en licenses/ bij de broncode. Een lokaal gebouwde plugin-JAR bevat deze vermeldingen ook onder META-INF/.
-
-Voor wijzigingen: bouw en voer de tests uit met build.ps1. Beschrijf bij UI-problemen je SoapUI-versie, Java-versie, thema-instelling en het betrokken scherm. Gebruik synthetische voorbeelden zonder credentials of echte requestdata.
+For changes, build and run the tests with build.ps1. When reporting UI issues, include your SoapUI version, Java version, theme setting, and affected screen. Use synthetic examples without credentials or actual request data.

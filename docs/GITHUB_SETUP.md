@@ -1,38 +1,38 @@
-# Naar GitHub en daarna verder werken
+# GitHub setup and ongoing development
 
-Dit pakket bevat de broncode van pluginversie **0.3.1**, met tests, bouwscripts en licentievermeldingen. De bestanden horen direct in de hoofdmap van je repository.
+This package contains the source code for plugin version **0.3.1**, including tests, build scripts, and license notices. The files belong directly in the root of your repository.
 
-## Eerste upload
+## Initial upload
 
-1. Pak de ZIP uit in een lege map.
-2. Maak op GitHub je repository aan, bijvoorbeeld soapui-system-theme. Dit pakket bevat al een README, MIT-licentie en .gitignore; laat GitHub die niet nogmaals genereren.
-3. Upload de **inhoud** naar de hoofdmap van de repository. Neem ook .gitignore, .gitattributes, docs/ en licenses/ mee. Upload de ZIP zelf niet als vervanging voor de uitgepakte bronbestanden.
-4. Controleer dat GitHub bovenaan README.md, LICENSE, THIRD_PARTY_NOTICES.md, build.ps1 en src/ toont.
+1. Extract the ZIP into an empty directory.
+2. Create your GitHub repository, for example `soapui-system-theme`. This package already includes a README, MIT license, and .gitignore; do not ask GitHub to generate them again.
+3. Upload the **contents** to the root of the repository. Include .gitignore, .gitattributes, docs/, and licenses/. Do not upload the ZIP itself as a substitute for the extracted source files.
+4. Check that GitHub shows README.md, LICENSE, THIRD_PARTY_NOTICES.md, build.ps1, and src/ at the top level.
 
-## Lokale clone
+## Local clone
 
-Clone de repository naar je normale ontwikkelmap:
+Clone the repository into your usual development directory:
 
 ~~~powershell
-git clone <jouw-repository-url>
+git clone <your-repository-url>
 ~~~
 
-Deel daarna de GitHub-URL en het absolute pad van de lokale clone in onze chat. Dan kunnen we vanuit die bestaande repository verder werken. Een private repository moet toegankelijk zijn via je gekoppelde GitHub-account of de lokale werkomgeving.
+Share the GitHub URL and the absolute path of the local clone in the chat so that future work can use the existing repository. A private repository must be accessible through your connected GitHub account or local development environment.
 
-Build-output, JAR's, ZIP's, lokale SoapUI-profielen en omgevingsbestanden staan in .gitignore. Het pakket bevat geen .git-map of bestaande Git-geschiedenis.
+Build output, JARs, ZIPs, local SoapUI profiles, and environment files are listed in .gitignore. The package contains no .git directory or existing Git history.
 
-## Bouwen en installeren
+## Building and installing
 
-Open PowerShell in de hoofdmap, met een JDK 17 of nieuwer en SoapUI Open Source 5.10.0 geïnstalleerd:
+Open PowerShell in the repository root with a JDK 17 or newer and SoapUI Open Source 5.10.0 installed:
 
 ~~~powershell
 .\build.ps1
 ~~~
 
-Gebruik -SoapUiHome en -JdkHome als automatische detectie niet lukt; zie de README. De build maakt dist\soapui-system-theme-0.3.1.jar en voert de tests uit. Een Windows-desktopsessie is nodig voor de grafische tests.
+Use `-SoapUiHome` and `-JdkHome` if automatic detection fails; see the README. The build creates `dist\soapui-system-theme-0.3.1.jar` and runs the tests. A Windows desktop session is required for graphical tests.
 
-Sluit SoapUI voordat je de JAR installeert of .\Install.ps1 gebruikt. Houd maar één pluginversie in je pluginmap.
+Close SoapUI before installing the JAR or running `.\Install.ps1`. Keep only one plugin version in your plugins directory.
 
-## Latere updates
+## Subsequent updates
 
-Werk vanuit de clone, bekijk wijzigingen met git diff en commit de bedoelde bronbestanden en documentatie. Een plugin-JAR of gebruikers-ZIP kan afzonderlijk als GitHub Release worden aangeboden, met de bijbehorende broncodeversie en licentievermeldingen.
+Work from the clone, review changes with `git diff`, and commit the intended source files and documentation. A plugin JAR or user ZIP can be provided separately as a GitHub Release, with the corresponding source version and license notices.
