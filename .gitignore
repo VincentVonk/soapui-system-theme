@@ -1,0 +1,30 @@
+# Generated output and archives
+/build/
+/dist/
+*.class
+*.jar
+*.zip
+# Local SoapUI state and logs
+.soapuios/
+soapui-settings.xml
+default-soapui-workspace.xml
+*.log
+hs_err_pid*
+replay_pid*
+*.dmp
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+# Editor and operating-system state
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
