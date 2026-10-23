@@ -13,7 +13,7 @@ final class ContrastIcon implements Icon {
     private final Icon source;
     private final boolean disabled;
     ContrastIcon(Icon source,boolean disabled) { this.source=source;this.disabled=disabled; }
-    static Icon wrap(Icon source,boolean disabled) { return source==null || source instanceof ContrastIcon || source instanceof TitleControlIcon ? source : new ContrastIcon(source,disabled); }
+    static Icon wrap(Icon source,boolean disabled) { return source==null || source instanceof ContrastIcon || source instanceof TitleControlIcon || source instanceof TabsLayoutIcon ? source : new ContrastIcon(source,disabled); }
     public int getIconWidth() { return source.getIconWidth(); }
     public int getIconHeight() { return source.getIconHeight(); }
     public void paintIcon(Component component,Graphics graphics,int x,int y) {

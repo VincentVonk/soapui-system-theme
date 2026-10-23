@@ -13,8 +13,12 @@ $previousTestJar = Join-Path $plugins 'soapui-system-theme-0.2.0.jar'
 if (Test-Path -LiteralPath $previousTestJar) { Remove-Item -LiteralPath $previousTestJar }
 $previousPatchJar = Join-Path $plugins 'soapui-system-theme-0.3.0.jar'
 if (Test-Path -LiteralPath $previousPatchJar) { Remove-Item -LiteralPath $previousPatchJar }
-Copy-Item -LiteralPath (Join-Path $base 'dist\soapui-system-theme-0.3.1.jar') -Destination (Join-Path $plugins 'soapui-system-theme-0.3.1.jar') -Force
+$previousReleaseJar = Join-Path $plugins 'soapui-system-theme-0.3.1.jar'
+if (Test-Path -LiteralPath $previousReleaseJar) { Remove-Item -LiteralPath $previousReleaseJar }
+Copy-Item -LiteralPath (Join-Path $base 'dist\soapui-system-theme-0.3.2.jar') -Destination (Join-Path $plugins 'soapui-system-theme-0.3.2.jar') -Force
 'mode=LIGHT' | Set-Content -LiteralPath (Join-Path $uiHome '.soapuios\system-theme.properties')
 $cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')
-& (Join-Path $SoapUiHome 'jre\bin\java.exe') '-Djava.awt.headless=false' "-Duser.home=$uiHome" "-Djava.io.tmpdir=$(Join-Path $base 'build\tmp')" "-Dsoapui.home=$(Join-Path $SoapUiHome 'bin')" --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.desktop/java.beans=ALL-UNNAMED -cp "$(Join-Path $base 'build\test-classes');$cp" nl.vincentvonk.soapui.theme.FullUiTests (Join-Path $base 'build\full-ui')
+$nativeOptions = @()
+if (Test-Path -LiteralPath (Join-Path $base 'build\native-titlebar\supported')) { $nativeOptions = @('-Dsoapui.theme.testNativeTitleBar=true') }
+& (Join-Path $SoapUiHome 'jre\bin\java.exe') '-Djava.awt.headless=false' @nativeOptions "-Duser.home=$uiHome" "-Djava.io.tmpdir=$(Join-Path $base 'build\tmp')" "-Dsoapui.home=$(Join-Path $SoapUiHome 'bin')" --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.desktop/java.beans=ALL-UNNAMED -cp "$(Join-Path $base 'build\test-classes');$cp" nl.vincentvonk.soapui.theme.FullUiTests (Join-Path $base 'build\full-ui')
 if ($LASTEXITCODE -ne 0) { throw 'Full SoapUI desktop integration test failed.' }

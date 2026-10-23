@@ -1,4 +1,4 @@
-# SoapUI System Theme 0.3.1
+# SoapUI System Theme 0.3.2
 
 [**Download latest version (ZIP)**](https://github.com/VincentVonk/soapui-system-theme/releases/latest/download/SoapUI-System-Theme.zip) · [Releases and version history](https://github.com/VincentVonk/soapui-system-theme/releases/latest)
 
@@ -16,8 +16,8 @@ GitHub's automatic **Source code (zip)** and **Source code (tar.gz)** downloads 
 
 1. Download **SoapUI-System-Theme.zip** from [GitHub Releases](https://github.com/VincentVonk/soapui-system-theme/releases/latest). Extract the **entire ZIP** into a folder, preserving `dist/` and `licenses/`, then close SoapUI.
 2. Press **Win+R** and open `%USERPROFILE%\.soapuios\plugins`. Create the directory if it does not exist.
-3. Remove any previously installed `soapui-system-theme-*.jar`, such as version 0.3.0. Keep only one version of System Theme in this directory.
-4. Copy `dist\soapui-system-theme-0.3.1.jar` into that directory.
+3. Remove any previously installed `soapui-system-theme-*.jar`, such as version 0.3.1. Keep only one version of System Theme in this directory.
+4. Copy `dist\soapui-system-theme-0.3.2.jar` into that directory.
 5. Start SoapUI Open Source 5.10.0. A **Theme** menu appears at the top.
 6. Leave **Theme > Follow Windows** selected.
 
@@ -51,7 +51,15 @@ Your choice is saved in `%USERPROFILE%\.soapuios\system-theme.properties`. The `
 
 ## What this version changes
 
-New in 0.3.1: the minimize, maximize, restore, and close icons on SoapUI's internal windows use dark backgrounds with light symbols. This also works after maximizing and restoring a window. The original buttons and actions are preserved; light mode restores the original icons. This applies to internal SoapUI windows, rather than the native Windows title bar.
+New in 0.3.2: on **Windows 11 (build 22000 or later)**, the native Windows title bar of SoapUI and its decorated Java dialogs follows the plugin's dark/light mode too. Native minimize, maximize, restore, close, dragging and resizing remain managed by Windows. Light mode restores the captured native setting. Newly opened dialogs are included.
+
+Default HTML text in read-only error/details dialogs now uses a readable light foreground in dark mode. The message document and text are retained, and Light restores the original display setting. Editable HTML request/response documents are excluded. HTML that explicitly specifies its own text colors can retain those colors.
+
+The **Toggles to tab-based layout** button now uses a dark two-panel glyph in both its normal and disabled states. Its dimensions, button model and action are retained, and Light restores the original icons.
+
+This uses Windows' DWM dark-mode attribute through an embedded, original Windows PowerShell helper. It runs asynchronously, without a profile or execution-policy change, and only targets decorated AWT windows belonging to the current SoapUI process. One helper runs while dark mode is active and exits after restoration or application shutdown. The first native update can take a few seconds. No Windows theme/accent settings or SoapUI launch files are changed, and no additional libraries are downloaded or bundled. If Windows or local security policy does not support the helper, the ordinary title bar is retained and the Swing theme still works. High-contrast settings, accent colors and other Windows customizations can affect the final native appearance.
+
+Added in 0.3.1: the minimize, maximize, restore, and close icons on SoapUI's internal windows use dark backgrounds with light symbols. This also works after maximizing and restoring a window. The original buttons and actions are preserved; light mode restores the original icons.
 
 Added in 0.3.0:
 
@@ -72,11 +80,11 @@ Dark, neutral pixels in icons receive more contrast without modifying the source
 
 Light mode preserves existing component colors. Components created during dark mode receive the default light colors when switching back if no previous light state exists.
 
-## Limitations of version 0.3.1
+## Limitations of version 0.3.2
 
 This is an independent plugin, rather than an extension maintained by SmartBear. The build and tests use the actual SoapUI 5.10.0 libraries and its bundled Java 17 runtime. In addition to individual component tests, the actual SoapUI desktop is launched with a synthetic project and checked visually. Not every SoapUI screen or third-party plugin has been tested individually.
 
-Some legacy icons, charts, components with custom painting, native Windows dialogs, and other embedded web pages may retain their own colors. The native title bar is drawn by Windows/Java; the plugin does not replace window decorations. Logos and images in web pages are not recolored. Colors with specific meanings, such as status colors, are preserved wherever possible. You can always switch back to **Light**.
+Some legacy icons, charts, components with custom painting, native Windows dialogs, and other embedded web pages may retain their own colors. Windows draws the native title bars; the plugin requests dark mode for decorated Java windows on Windows 11 without replacing window decorations. Windows 10 retains its ordinary native title bars. Logos and images in web pages are not recolored. Colors with specific meanings, such as status colors, are preserved wherever possible. You can always switch back to **Light**.
 
 Endpoint Explorer and the local offline start page have been tested with actual JavaFX rendering. The online start page is supported through its known SoapUI URL, but could not be loaded over the internet in this test environment, so it has not been fully validated visually. Changes to that page or URL by SmartBear may require additional styling. A light appearance may briefly be visible during startup or page loading before the plugin or stylesheet becomes active.
 
@@ -84,7 +92,7 @@ The plugin targets Windows and requires SoapUI Open Source 5.10.0 or later accor
 
 ## Uninstalling
 
-Close SoapUI, remove `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.1.jar`, and start SoapUI again. You can also use `.\Uninstall.ps1`. Only this plugin's JAR is removed. The small preferences file is retained; you may also remove `system-theme.properties`.
+Close SoapUI, remove `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.2.jar`, and start SoapUI again. You can also use `.\Uninstall.ps1`. Only this plugin's JAR is removed. The small preferences file is retained; you may also remove `system-theme.properties`.
 
 ## Building from source
 
@@ -96,16 +104,16 @@ Requirements: Windows, a desktop session, a **JDK 17 or newer**, and SoapUI Open
 
 The build tries to detect the JDK and SoapUI automatically; running just `.\build.ps1` is often sufficient. If needed, pass `-JdkHome` with the directory of your installed JDK. `SoapUiHome` is the directory containing `bin` and `lib`. An existing installation may keep an older directory name after an upgrade, so the build checks for `bin\soapui-5.10.0.jar`.
 
-The build creates `dist\soapui-system-theme-0.3.1.jar`. The `--release 17` option ensures compatibility with SoapUI's Java 17. Tests use SoapUI's own JRE and work in `build\test-home` and `build\ui-home`; they do not change your actual Windows theme or SoapUI projects. For graphical regression tests, test windows are placed offscreen without keyboard focus and rendered to PNG. The actual desktop test uses a temporary preferences profile and a test implementation of Java Preferences, so your user registry is not used for Java preferences. SoapUI's legacy JGoodies version requires a desktop session, even when rendering to an image.
+The build creates `dist\soapui-system-theme-0.3.2.jar`. The `--release 17` option ensures compatibility with SoapUI's Java 17. Tests use SoapUI's own JRE and work in `build\test-home` and `build\ui-home`; they do not change your actual Windows theme or SoapUI projects. Most graphical tests are rendered offscreen. On Windows 11, the native-title-bar checks briefly show test windows without requesting keyboard focus and capture their actual compositor output; Swing's offscreen printing cannot verify a native DWM title bar. The actual desktop test uses a temporary preferences profile and a test implementation of Java Preferences, so your user registry is not used for Java preferences. SoapUI's legacy JGoodies version requires a desktop session, even when rendering to an image.
 
 ## Binary release contents
 
-- `dist/soapui-system-theme-0.3.1.jar`: the tested, installable plugin. Keep this path intact for `Install.ps1`.
+- `dist/soapui-system-theme-0.3.2.jar`: the tested, installable plugin. Keep this path intact for `Install.ps1`.
 - `Install.ps1`, `Uninstall.ps1`: optional installation helpers.
 - `README.md`: installation, use, and limitations.
 - `LICENSE`, `THIRD_PARTY_NOTICES.md`, `licenses/`: project license and separate library notices.
 
-The binary ZIP contains these items directly at its root, with no extra wrapper directory. It contains no SoapUI/JDK libraries, source code, test profiles, or screenshots. The plugin JAR also includes the license notices under `META-INF/`.
+The binary ZIP contains these items directly at its root, with no extra wrapper directory. It contains no SoapUI/JDK libraries, Java source tree, test profiles, or screenshots. The original Windows helper is embedded in the plugin JAR, alongside the license notices under `META-INF/`.
 
 The source repository additionally contains `src/main/java/`, `src/test/java/`, `build.ps1`, `test-ui.ps1`, `release.ps1`, packaging checks in `tests/`, and [TEST-REPORT.md](https://github.com/VincentVonk/soapui-system-theme/blob/main/TEST-REPORT.md). Generated `build/`, `dist/`, and `releases/` directories are ignored by Git. See [CHANGELOG.md](https://github.com/VincentVonk/soapui-system-theme/blob/main/CHANGELOG.md) for version history.
 
@@ -114,9 +122,9 @@ The source repository additionally contains `src/main/java/`, `src/test/java/`, 
 From the source checkout, with the build requirements above installed, run:
 
 ```powershell
-.\release.ps1 -Version 0.3.1
+.\release.ps1 -Version 0.3.2
 # If automatic detection fails:
-.\release.ps1 -Version 0.3.1 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'
+.\release.ps1 -Version 0.3.2 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'
 ```
 
 `-Version` is an optional assertion; the script reads the version from `SystemThemePlugin.java`. It checks the build/install/uninstall/UI-test JAR references, README heading, changelog, controller startup message and dependency-notice version. For a future version, update these references together, including other user-facing version strings in `ThemeController.java` and `Uninstall.ps1`.
@@ -127,15 +135,15 @@ Every run calls `build.ps1` with **all tests enabled**, including the actual Soa
 releases/SoapUI-System-Theme.zip
 ```
 
-The original `dist/soapui-system-theme-0.3.1.jar` is retained. A previous release ZIP is removed at the start of a new attempt, so a failed attempt does not leave an older ZIP ready to upload. The ZIP name stays fixed for every version; its JAR remains versioned. The script prints the ZIP's SHA-256 for reference. Repeated builds use the same process and layout; archive timestamps may differ.
+The original `dist/soapui-system-theme-0.3.2.jar` is retained. A previous release ZIP is removed at the start of a new attempt, so a failed attempt does not leave an older ZIP ready to upload. The ZIP name stays fixed for every version; its JAR remains versioned. The script prints the ZIP's SHA-256 for reference. Repeated builds use the same process and layout; archive timestamps may differ.
 
 Run the isolated packaging regression checks separately with `powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\release.Tests.ps1`. These use a synthetic build fixture; they do not replace the real build/tests performed by `release.ps1`.
 
-To publish the first release **v0.3.1** yourself:
+To publish release **v0.3.2** yourself:
 
 1. Review the local changes, run `release.ps1` successfully, and check the extracted ZIP. You can try `Install.ps1`/`Uninstall.ps1` with `-PluginDirectory` pointing to a temporary directory.
 2. Commit and push the reviewed source changes yourself. Keep generated JARs/ZIPs out of the source commit. If you change any source or packaged documentation after testing, rebuild the release ZIP.
-3. Open the repository's [Releases page](https://github.com/VincentVonk/soapui-system-theme/releases), choose **Draft a new release**, create tag **v0.3.1** against the commit just pushed, and title it **SoapUI System Theme 0.3.1**. If that tag already exists, verify that it points to the intended commit.
+3. Open the repository's [Releases page](https://github.com/VincentVonk/soapui-system-theme/releases), choose **Draft a new release**, create tag **v0.3.2** against the commit just pushed, and title it **SoapUI System Theme 0.3.2**. If that tag already exists, verify that it points to the intended commit.
 4. Add release notes from the changelog, state compatibility with Windows / SoapUI Open Source 5.10.0, and attach **releases/SoapUI-System-Theme.zip** as a release asset. Keep the asset name exactly **SoapUI-System-Theme.zip**.
 5. Review the draft, publish it as a full release (not a prerelease), and select it as the latest release. Check both README download links and download/extract the uploaded asset once.
 
@@ -143,6 +151,7 @@ The release script never commits, tags, pushes, installs, or publishes. [GitHub 
 
 ## Technical references
 
+- [Microsoft: native DWM dark-mode attribute](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute)
 - [SoapUI 5.10.0 plugin loader](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/plugins/PluginLoader.java)
 - [SoapUI plugin interface](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/plugins/Plugin.java)
 - [SoapUI default theme](https://github.com/SmartBear/soapui/blob/v5.10.0/soapui/src/main/java/com/eviware/soapui/StandaloneSoapUICore.java)

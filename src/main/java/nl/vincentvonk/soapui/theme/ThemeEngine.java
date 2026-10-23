@@ -166,6 +166,12 @@ final class ThemeEngine {
         if (c instanceof com.eviware.soapui.support.swing.GradientPanel)
             ((JComponent)c).setOpaque(true);
         if (c instanceof JEditorPane) aboutPanes.install((JEditorPane)c);
+        // SoapUI's extended error dialog uses HTML without an explicit text color.
+        // Let read-only HTML honor the component foreground, without replacing or
+        // editing the message document. Editable request/response HTML is excluded.
+        if (c instanceof JEditorPane && !((JEditorPane)c).isEditable()
+            && ((JEditorPane)c).getDocument() instanceof javax.swing.text.html.HTMLDocument)
+            ((JEditorPane)c).putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         // Keep JavaFX optional: headless/disabled-browser SoapUI sessions need no FX toolkit.
         if (c.getClass().getName().equals("javafx.embed.swing.JFXPanel")) {
             if (webTheme == null) webTheme = new FxWebTheme();
@@ -175,9 +181,14 @@ final class ThemeEngine {
             ((JScrollBar)c).setUI(new DarkScrollBarUI());
         if(c instanceof AbstractButton) {
             AbstractButton button=(AbstractButton)c;
-            button.setIcon(snapshot.icon == com.eviware.soapui.support.UISupport.HELP_ICON
-                ? new HelpGlyphIcon(snapshot.icon, false) : ContrastIcon.wrap(button.getIcon(),false));
-            button.setDisabledIcon(ContrastIcon.wrap(button.getDisabledIcon(),true));
+            if (snapshot.icon != null && snapshot.icon == com.eviware.soapui.support.UISupport.createImageIcon("/toggle_tabs.gif")) {
+                button.setIcon(new TabsLayoutIcon(snapshot.icon, false));
+                button.setDisabledIcon(new TabsLayoutIcon(snapshot.icon, true));
+            } else {
+                button.setIcon(snapshot.icon == com.eviware.soapui.support.UISupport.HELP_ICON
+                    ? new HelpGlyphIcon(snapshot.icon, false) : ContrastIcon.wrap(button.getIcon(),false));
+                button.setDisabledIcon(ContrastIcon.wrap(button.getDisabledIcon(),true));
+            }
         } else if(c instanceof JLabel) {
             JLabel label=(JLabel)c;
             label.setIcon(ContrastIcon.wrap(label.getIcon(),false));
@@ -303,12 +314,14 @@ final class ThemeEngine {
         final Icon icon,disabledIcon;
         final javax.swing.plaf.ScrollBarUI scrollUI;
         final boolean opaque;
+        final Object honorDisplayProperties;
         boolean syntaxApplied;
 
         Snapshot(Component c, boolean bornDark) {
             background = c.getBackground(); foreground = c.getForeground();
             border = c instanceof JComponent ? ((JComponent) c).getBorder() : null;
             opaque = c instanceof JComponent && ((JComponent)c).isOpaque();
+            honorDisplayProperties = c instanceof JEditorPane ? ((JEditorPane)c).getClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES) : null;
             this.bornDark = bornDark && (BG.equals(background) || INPUT.equals(background));
             JTextComponent t = c instanceof JTextComponent ? (JTextComponent) c : null;
             caret = t == null ? null : t.getCaretColor(); selection = t == null ? null : t.getSelectionColor();
@@ -379,6 +392,8 @@ final class ThemeEngine {
                 g.setFoldBackground(bornDark ? Color.WHITE : gutter[2]); g.setFoldIndicatorForeground(bornDark ? Color.GRAY : gutter[3]);
                 g.setActiveLineRangeColor(bornDark ? Gutter.DEFAULT_ACTIVE_LINE_RANGE_COLOR : gutter[4]);
             }
+            if (c instanceof JEditorPane)
+                ((JEditorPane)c).putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, honorDisplayProperties);
             c.repaint();
         }
     }

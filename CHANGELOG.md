@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 - 2026-10-23
+
+- Make default HTML text in read-only error/details dialogs readable in dark mode, preserving message text/document identity and restoring the original display property in Light. Leave editable HTML request/response documents untouched.
+- Replace the tab-based-layout toggle's white icon face with a dark glyph in normal and disabled states, preserving the original size, source image and button action; restore the original icons in Light.
+- Apply Windows 11 native dark title bars to SoapUI and newly opened decorated Java dialogs, alongside the existing Swing theme.
+- Preserve native window decorations and restore the captured DWM setting in Light mode and when the helper exits.
+- Use an embedded, original Windows PowerShell helper scoped to the current Java process, without downloads, additional native libraries, global theme changes or SoapUI launcher changes. Run it off the Swing event thread and retain the ordinary title bar if unavailable.
+- Add native read-back, three dark/light cycles, new-dialog, shutdown and actual compositor screenshot tests, including the packaged plugin in the real SoapUI desktop.
+- Update installation/build/release references to 0.3.2. Windows 10 native title bars remain unchanged.
+
 ## Manual binary release preparation - 2026-10-23
 
 - Add release.ps1 to run the full build/tests and create releases/SoapUI-System-Theme.zip for manual upload to GitHub Releases.

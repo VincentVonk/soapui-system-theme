@@ -39,6 +39,7 @@ final class ThemeController {
     private static final Logger LOG = Logger.getLogger("SoapUI.SystemTheme");
     private final JFrame frame;
     private final ThemeEngine engine = new ThemeEngine();
+    private final WindowsTitleBar titleBars = new WindowsTitleBar();
     @FunctionalInterface interface ThemeReader { Optional<Boolean> read() throws Exception; }
     private final ThemeReader reader;
     private final Path settings;
@@ -75,7 +76,7 @@ final class ThemeController {
         frame.revalidate();
         applyMode();
         worker.scheduleWithFixedDelay(this::poll, 0, pollMillis, TimeUnit.MILLISECONDS);
-        LOG.info("System Theme 0.3.1 started; mode=" + mode + "; checks Windows app mode every 3 seconds");
+        LOG.info("System Theme 0.3.2 started; mode=" + mode + "; checks Windows app mode every 3 seconds");
     }
 
     private JMenu buildMenu() {
@@ -89,13 +90,14 @@ final class ThemeController {
         }
         menu.addSeparator();
         menu.add("About System Theme").addActionListener(e -> JOptionPane.showMessageDialog(frame,
-            "System Theme 0.3.1 for SoapUI Open Source 5.10.0\n\n"
+            "System Theme 0.3.2 for SoapUI Open Source 5.10.0\n\n"
             + "Follow Windows reads the Windows app mode every 3 seconds.\n"
             + "Your Windows scheduler controls the switch time.\n"
             + "Light restores the original SoapUI look and component colours.\n\n"
             + "No requests, credentials, projects, or Windows settings are modified.\n"
             + "SoapUI start pages and Endpoint Explorer receive a separate dark stylesheet.\n"
-            + "Other web pages, some legacy icons, charts and native title bars retain their own styling.",
+            + "Windows 11 native title bars follow the theme through an optional local helper.\n"
+            + "Other web pages, some legacy icons, charts and native system dialogs retain their own styling.",
             "System Theme", JOptionPane.INFORMATION_MESSAGE));
         return menu;
     }
@@ -122,10 +124,10 @@ final class ThemeController {
 
     private void applyMode() {
         boolean dark = mode == Mode.DARK || (mode == Mode.SYSTEM && Boolean.TRUE.equals(windowsDark));
-        try { engine.setDark(dark, Window.getWindows()); }
+        try { engine.setDark(dark, Window.getWindows()); titleBars.setDark(dark); }
         catch (Exception e) {
             LOG.log(Level.SEVERE, "Could not change appearance; restoring light mode", e);
-            try { engine.setDark(false, Window.getWindows()); }
+            try { engine.setDark(false, Window.getWindows()); titleBars.setDark(false); }
             catch (Exception rollback) { LOG.log(Level.SEVERE, "Appearance restoration failed", rollback); }
         }
     }
@@ -138,6 +140,7 @@ final class ThemeController {
         else if (event instanceof WindowEvent && event.getID() == WindowEvent.WINDOW_OPENED)
             component = ((WindowEvent) event).getWindow();
         if (component == null) return;
+        if (component instanceof Window) titleBars.refresh();
         pending.add(component);
         if (patchQueued) return;
         patchQueued = true;
@@ -171,6 +174,7 @@ final class ThemeController {
     private void close() {
         closed = true; worker.shutdownNow(); pending.clear();
         engine.close();
+        titleBars.close();
         Toolkit.getDefaultToolkit().removeAWTEventListener(uiListener);
     }
 }

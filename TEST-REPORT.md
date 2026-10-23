@@ -1,6 +1,6 @@
-# Test report - SoapUI System Theme 0.3.1
+# Test report - SoapUI System Theme
 
-Date: 21 October 2026.
+Initial validation: 21 October 2026 (0.3.1). Later validation runs are recorded below.
 
 ## Environment
 
@@ -71,3 +71,29 @@ Validated locally in the Git checkout with Windows PowerShell 5.1, JDK 27.0.1.0.
 - Verified Git ignores the build log, versioned JAR and release ZIP. The user's newly uploaded .gitignore/.gitattributes were fetched; only /releases/ was added to .gitignore.
 
 The JavaFX unnamed-module warning and SoapUI's missing optional ext-directory warning did not fail the tests. The temporary unreadable Windows preference warning is part of the controller failure-path test. The live online starter page and later SoapUI versions were not validated in this run. No changes were committed or pushed, and no GitHub release or tag was created. Publication and downloading the uploaded asset remain manual follow-up steps.
+
+## Windows native title bars / 0.3.2 - 23 October 2026
+
+Environment: Windows 11 build 26100, JDK 27.0.1.0.2 compiling with --release 17, SoapUI Open Source 5.10.0 and its bundled Java 17.0.12 runtime. Only temporary test profiles were used; the installed user plugin, Windows app theme and registry preferences were not modified.
+
+- The full release.ps1 build passed the existing 358 assertions, controller scenarios, real plugin-loader integration and real SoapUI desktop integration.
+- WindowsTitleBarTests passed 20 additional checks: actual DWM attribute read-back, three dark/light cycles, exact original-setting restoration, a decorated dialog opened in dark mode, preserved document text and native decorations, helper restoration on pipe closure and controller-helper shutdown. Total explicit component/native checks: 378.
+- Actual compositor screenshots verified the native title bar, rather than Swing's printAll output. The standalone fixture and the packaged plugin in the actual SoapUI desktop both showed a dark native caption and restored the original light caption. The main native caption also remained dark after opening/closing the actual Preferences, New SOAP Project and About dialogs. These screenshots were visually inspected.
+- The real-desktop test initially exposed interference from its own offscreen-window positioning; capture now temporarily shows only test windows without requesting keyboard focus. A disappearing dialog also exposed a per-window DWM failure. Such windows are skipped without disabling styling of other windows, and the final full-desktop run passed without a native-helper warning.
+- A deliberately refusing helper was substituted only on a temporary test classpath. The asynchronous controller scenarios still passed, while logging the expected native-styling warning. This validates that helper startup failure does not undo the working Swing theme.
+- The isolated 24 packaging/installer checks passed for 0.3.2. The final ZIP keeps dist/soapui-system-theme-0.3.2.jar and the existing notices/installers; its JAR includes the original helper resource and no third-party implementation libraries.
+
+The helper only requests DWMWA_USE_IMMERSIVE_DARK_MODE for decorated AWT windows belonging to the current Java PID. It captures/restores that setting instead of forcing caption/text colors, whose original values could not be read reliably on the checked Windows version. It runs outside Swing's event thread, starts without a PowerShell profile or execution-policy change, and exits after returning to Light or closing the application.
+
+Windows 10 takes the helper's unsupported-build path; its visual appearance was not separately tested. A blocked PowerShell/.NET environment retains ordinary native title bars. Accent/high-contrast customizations, other Java/SoapUI versions and the live online starter page are not established by this validation. No commit, push, tag or GitHub release was made for 0.3.2.
+
+## Additional readability fixes / 0.3.2 - 23 October 2026
+
+Scope: error-message readability and the white tab-layout icon, retained within the unpublished 0.3.2 changes. Exception handling, project-import behavior and the existing menu code were not changed in this readability update.
+
+- ReadabilityTests passed 57 checks across three dark/light cycles: light pixels in the rendered HTML error text on a dark background, preserved document identity and text, repeat styling without clearing a copy selection, and exact restoration of unset/explicit-false HTML display properties. Editable HTML documents retain their document and display property.
+- The tests use SoapUI's actual cached toggle_tabs.gif and its createToolbarButton factory. Both normal and disabled dark glyphs have no white face; dimensions, source-image pixels, Action, ButtonModel and single-click behavior are preserved. Light restores the original icons by identity.
+- FullUiTests opens SoapUI's actual extended Error dialog using a synthetic error message. The packaged plugin styles its read-only HTML and restores the original display property without replacing or changing the error document. Dark/light screenshots were inspected visually.
+- The full release build passes the prior 378 explicit component/native checks plus these 57 checks, for 435 in total, alongside the controller, real loader and real desktop integration scenarios. The 24 isolated packaging/installer checks remain separate from those Java/UI checks.
+
+The display-property fix applies to default HTML text colors; it does not override explicitly styled HTML colors. Screenshots and test profiles remain under ignored build/. The final ZIP retains the 0.3.2 JAR name and complete license notices. No commit, push or release publication was performed.

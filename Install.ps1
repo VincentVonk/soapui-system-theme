@@ -4,7 +4,7 @@
 param([string]$PluginDirectory = (Join-Path $env:USERPROFILE '.soapuios\plugins'))
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$fileName = 'soapui-system-theme-0.3.1.jar'
+$fileName = 'soapui-system-theme-0.3.2.jar'
 $source = Join-Path $PSScriptRoot "dist\$fileName"
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing $source. Run build.ps1 first, or extract a complete binary release." }
 $destination = [IO.Path]::GetFullPath($PluginDirectory)

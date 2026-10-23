@@ -1,6 +1,6 @@
 # Third-party notices
 
-Reviewed for the source publication of SoapUI System Theme 0.3.1 on 23 October 2026.
+Reviewed for the source publication of SoapUI System Theme 0.3.2 on 23 October 2026.
 
 ## Original project code
 
@@ -39,6 +39,8 @@ SoapUI's checked installation also has a licences/RSyntaxTextArea-LICENSE.txt co
 Other libraries on the build classpath belong to the user's SoapUI installation. This inventory covers direct plugin interfaces and principal host APIs used by tests, rather than the entire SoapUI application.
 
 ## Attribution and distribution
+
+The original embedded Windows title-bar helper uses the operating system's Windows PowerShell/.NET and user32/dwmapi APIs. These system components are not redistributed. The helper script and its original interop declarations are covered by the project's MIT license. It downloads no libraries.
 
 Keep this file, the project MIT license and licenses/ with source distributions. The local build also puts them under META-INF/ in the plugin JAR. Leave third-party notices intact. Redistributing third-party binaries or copying/modifying their implementation code requires compliance with the licenses of that exact material; this project's MIT license does not replace them.
 

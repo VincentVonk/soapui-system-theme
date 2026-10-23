@@ -1,6 +1,6 @@
 # GitHub setup and ongoing development
 
-This package contains the source code for plugin version **0.3.1**, including tests, build scripts, and license notices. The files belong directly in the root of your repository.
+This package contains the source code for plugin version **0.3.2**, including tests, build scripts, and license notices. The files belong directly in the root of your repository.
 
 ## Initial upload
 
@@ -29,10 +29,10 @@ Open PowerShell in the repository root with a JDK 17 or newer and SoapUI Open So
 .\build.ps1
 ~~~
 
-Use `-SoapUiHome` and `-JdkHome` if automatic detection fails; see the README. The build creates `dist\soapui-system-theme-0.3.1.jar` and runs the tests. A Windows desktop session is required for graphical tests.
+Use `-SoapUiHome` and `-JdkHome` if automatic detection fails; see the README. The build creates `dist\soapui-system-theme-0.3.2.jar` and runs the tests. A Windows desktop session is required for graphical tests.
 
 Close SoapUI before installing the JAR or running `.\Install.ps1`. Keep only one plugin version in your plugins directory.
 
 ## Subsequent updates
 
-Work from the clone, review changes with `git diff`, and commit the intended source files and documentation. To prepare a binary release, run `.\release.ps1 -Version 0.3.1`. It always runs the full build/tests and writes `releases\SoapUI-System-Theme.zip`, retaining the versioned JAR under `dist/` inside the ZIP. Follow the [manual release procedure](../README.md#preparing-a-manual-release-maintainers) to publish that asset yourself. The script does not commit, tag, push or publish.
+Work from the clone, review changes with `git diff`, and commit the intended source files and documentation. To prepare a binary release, run `.\release.ps1 -Version 0.3.2`. It always runs the full build/tests and writes `releases\SoapUI-System-Theme.zip`, retaining the versioned JAR under `dist/` inside the ZIP. Follow the [manual release procedure](../README.md#preparing-a-manual-release-maintainers) to publish that asset yourself. The script does not commit, tag, push or publish.

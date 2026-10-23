@@ -12,7 +12,7 @@ import javax.swing.Timer;
 
 /** Entry point discovered by the unmodified SoapUI Open Source plugin loader. */
 @PluginConfiguration(groupId = "nl.vincentvonk.soapui", name = "System Theme",
-    version = "0.3.1", minimumSoapUIVersion = "5.10.0", autoDetect = false,
+    version = "0.3.2", minimumSoapUIVersion = "5.10.0", autoDetect = false,
     description = "Follow Windows app light/dark mode; restore SoapUI's original light appearance.")
 public final class SystemThemePlugin extends PluginAdapter {
     private static ThemeController controller;

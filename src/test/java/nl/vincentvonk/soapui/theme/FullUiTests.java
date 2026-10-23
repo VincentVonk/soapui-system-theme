@@ -20,6 +20,7 @@ import javax.swing.*;
 public final class FullUiTests {
     private static Path output;
     private static JDialog preferences, newProject;
+    private static volatile boolean capturingNative;
     public static void main(String[] args) {
         Thread watchdog = new Thread(() -> { try { Thread.sleep(45000); } catch (InterruptedException e) { return; }
             System.err.println("Full SoapUI UI test timed out"); System.exit(2); }, "ui-test-watchdog");
@@ -56,7 +57,7 @@ public final class FullUiTests {
             // Configure ownerless dialogs too, before their native peer can request keyboard focus.
             Component source=e.getSource() instanceof Component ? (Component)e.getSource() : null;
             Window window=source instanceof Window ? (Window)source : source==null ? null : SwingUtilities.getWindowAncestor(source);
-            if(window!=null) { window.setFocusableWindowState(false);window.setAutoRequestFocus(false);window.setLocation(-10000,-10000); }
+            if(window!=null) { window.setFocusableWindowState(false);window.setAutoRequestFocus(false);if(!capturingNative)window.setLocation(-10000,-10000); }
         }, AWTEvent.WINDOW_EVENT_MASK | AWTEvent.CONTAINER_EVENT_MASK | AWTEvent.HIERARCHY_EVENT_MASK);
         SwingUtilities.invokeAndWait(() -> {
             try { SoapUI.startSoapUI(new String[0], "SoapUI 5.10.0 — isolated plugin test", core); }
@@ -75,6 +76,7 @@ public final class FullUiTests {
             catch (Exception e) { throw new RuntimeException(e); }
         });
         Thread.sleep(600);
+        nativeSnapshot("soapui-native-dark.png", true);
         SwingUtilities.invokeAndWait(() -> {
             try { snapshot("soapui-dark.png");
                 BufferedImage image=ImageIO.read(output.resolve("soapui-dark.png").toFile());
@@ -96,12 +98,18 @@ public final class FullUiTests {
                 checkHeaders(preferences);checkHeaders(newProject);
                 snapshot(preferences,"preferences-dark.png");snapshot(newProject,"new-soap-project-dark.png");
                 checkAbout();
-                menu().getItem(1).doClick(); snapshot("soapui-restored.png");
-                snapshot(preferences,"preferences-restored.png");snapshot(newProject,"new-soap-project-restored.png");
-                preferences.dispose();newProject.dispose();
-                SoapUI.getFrame().dispose();
+                checkErrorText();
             } catch (Exception e) { throw new RuntimeException(e); }
         });
+        nativeSnapshot("soapui-native-after-dialogs-dark.png", true);
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                menu().getItem(1).doClick(); snapshot("soapui-restored.png");
+                snapshot(preferences,"preferences-restored.png");snapshot(newProject,"new-soap-project-restored.png");
+            } catch (Exception e) { throw new RuntimeException(e); }
+        });
+        nativeSnapshot("soapui-native-restored.png", false);
+        SwingUtilities.invokeAndWait(() -> { preferences.dispose();newProject.dispose();SoapUI.getFrame().dispose(); });
         System.out.println("PASS: actual SoapUI 5.10.0 desktop, About, Preferences, New SOAP Project, new dialog events and restoration (isolated profile)");
     }
     private static void checkAbout() throws Exception {
@@ -136,6 +144,34 @@ public final class FullUiTests {
         if(c instanceof JEditorPane)return (JEditorPane)c;
         if(c instanceof Container)for(Component child:((Container)c).getComponents()) {JEditorPane pane=findEditor(child);if(pane!=null)return pane;}
         return null;
+    }
+    private static void checkErrorText() throws Exception {
+        Throwable[] error={null};boolean[] checked={false};int[] attempts={0};
+        Timer timer=new Timer(200,null);
+        timer.addActionListener(event -> {
+            for(Window window:Window.getWindows())if(window instanceof JDialog&&window.isShowing()&&"Error".equals(((JDialog)window).getTitle())) {
+                try {
+                    JEditorPane pane=findEditor(window);
+                    if(pane==null||!Boolean.TRUE.equals(pane.getClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES))) {
+                        if(++attempts[0]<12)return;throw new AssertionError("Actual error HTML did not become readable");
+                    }
+                    javax.swing.text.Document original=pane.getDocument();String text=original.getText(0,original.getLength());
+                    if(!pane.getForeground().equals(new Color(0xe3e6eb)))throw new AssertionError("Error foreground remains dark");
+                    snapshot(window,"error-text-dark.png");
+                    menu().getItem(1).doClick();snapshot(window,"error-text-restored.png");
+                    if(pane.getClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES)!=null||pane.getDocument()!=original
+                        ||!text.equals(original.getText(0,original.getLength())))throw new AssertionError("Error document or original display property changed");
+                    menu().getItem(2).doClick();checked[0]=true;
+                }catch(Throwable e){error[0]=e;}
+                finally{timer.stop();window.dispose();}
+                return;
+            }
+        });
+        timer.start();
+        com.eviware.soapui.support.UISupport.getDialogs().showExtendedInfo("Error","An error of type NullPointerException occurred.",
+            "<html><body>java.lang.NullPointerException: Cannot invoke<br>javax.swing.JMenu.removeAll() because curMenu is null</body></html>",new Dimension(430,330));
+        timer.stop();if(error[0]!=null)throw new AssertionError("Actual error-dialog styling failed",error[0]);
+        if(!checked[0])throw new AssertionError("Actual error dialog was not checked");
     }
     private static Object field(Object object,String name) throws Exception {
         java.lang.reflect.Field field=object.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(object);
@@ -197,6 +233,31 @@ public final class FullUiTests {
     }
     private static void snapshot(String name) throws Exception {
         snapshot(SoapUI.getFrame(),name);
+    }
+    private static void nativeSnapshot(String name, boolean expectDark) throws Exception {
+        if (!Boolean.getBoolean("soapui.theme.testNativeTitleBar")) return;
+        capturingNative=true;
+        Rectangle[] bounds = new Rectangle[1];
+        SwingUtilities.invokeAndWait(() -> {
+            JFrame frame = SoapUI.getFrame(); frame.setAlwaysOnTop(true);frame.setLocation(50,50);bounds[0]=frame.getBounds();
+        });
+        try {
+            Robot robot = new Robot(); long deadline = System.nanoTime()+10_000_000_000L;
+            BufferedImage image;
+            do {
+                robot.delay(150);image=robot.createScreenCapture(bounds[0]);
+                Color caption=new Color(image.getRGB(500,15));
+                if(!expectDark || (caption.getRed()<80&&caption.getGreen()<80&&caption.getBlue()<80))break;
+                if(System.nanoTime()>deadline) {
+                    ImageIO.write(image,"png",output.resolve("native-titlebar-failure.png").toFile());
+                    throw new AssertionError("Actual SoapUI native title bar remains bright; frame="+SoapUI.getFrame().getBounds()+"; pixel="+caption);
+                }
+            }while(true);
+            ImageIO.write(image,"png",output.resolve(name).toFile());
+        } finally {
+            SwingUtilities.invokeAndWait(() -> { SoapUI.getFrame().setAlwaysOnTop(false);SoapUI.getFrame().setLocation(-10000,-10000); });
+            capturingNative=false;
+        }
     }
     private static void snapshot(Window frame,String name) throws Exception {
         BufferedImage image = new BufferedImage(frame.getWidth(),frame.getHeight(),BufferedImage.TYPE_INT_RGB);
