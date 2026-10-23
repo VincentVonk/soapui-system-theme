@@ -4,6 +4,14 @@
 
 A Windows plugin for **SoapUI Open Source 5.10.0** that automatically follows the light or dark **Windows app theme**. The default setting is **Follow Windows**.
 
+## Light and dark
+
+The same demo project in SoapUI Open Source 5.10.0 on Windows 11. Click either screenshot to view it at full size.
+
+| Light | Dark |
+| --- | --- |
+| [![SoapUI in light mode](https://raw.githubusercontent.com/VincentVonk/soapui-system-theme/main/docs/screenshots/soapui-light.png)](https://github.com/VincentVonk/soapui-system-theme/blob/main/docs/screenshots/soapui-light.png) | [![SoapUI in dark mode, including the Windows title bar](https://raw.githubusercontent.com/VincentVonk/soapui-system-theme/main/docs/screenshots/soapui-dark.png)](https://github.com/VincentVonk/soapui-system-theme/blob/main/docs/screenshots/soapui-dark.png) |
+
 **Independent, unofficial plugin.** This project is not affiliated with, sponsored by, endorsed by, or maintained by SmartBear. SoapUI and SmartBear names and marks belong to their respective owners and are used to identify compatibility.
 
 Original project code is provided under the [MIT license](LICENSE). SoapUI libraries retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Developed with assistance from OpenAI Codex/ChatGPT.
