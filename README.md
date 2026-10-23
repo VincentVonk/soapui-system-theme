@@ -1,23 +1,33 @@
 # SoapUI System Theme 0.3.1
 
+[**Download latest version (ZIP)**](https://github.com/VincentVonk/soapui-system-theme/releases/latest/download/SoapUI-System-Theme.zip) · [Releases and version history](https://github.com/VincentVonk/soapui-system-theme/releases/latest)
+
 A Windows plugin for **SoapUI Open Source 5.10.0** that automatically follows the light or dark **Windows app theme**. The default setting is **Follow Windows**.
 
 **Independent, unofficial plugin.** This project is not affiliated with, sponsored by, endorsed by, or maintained by SmartBear. SoapUI and SmartBear names and marks belong to their respective owners and are used to identify compatibility.
 
 Original project code is provided under the [MIT license](LICENSE). SoapUI libraries retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Developed with assistance from OpenAI Codex/ChatGPT.
 
-This GitHub package contains the source code. Build the plugin first with `build.ps1`; a JDK 17 or newer and an existing SoapUI 5.10.0 installation are required. For the initial upload and local clone, see the [GitHub setup instructions](docs/GITHUB_SETUP.md).
+Download **SoapUI-System-Theme.zip** from GitHub Releases for a ready-to-install plugin. End users need Windows and an existing SoapUI Open Source 5.10.0 installation; no JDK or build is needed. The download links become available after the first non-draft, non-prerelease release is published with that asset name.
+
+GitHub's automatic **Source code (zip)** and **Source code (tar.gz)** downloads contain source code, without a built plugin. Developers can clone the [source repository](https://github.com/VincentVonk/soapui-system-theme) and follow [Building from source](#building-from-source). See also the [GitHub setup instructions](https://github.com/VincentVonk/soapui-system-theme/blob/main/docs/GITHUB_SETUP.md).
 
 ## Installation (no administrator privileges required)
 
-1. Build the plugin with `build.ps1` (see [Building from source](#building-from-source)), then close SoapUI. If you are using a complete binary release, extract it first.
+1. Download **SoapUI-System-Theme.zip** from [GitHub Releases](https://github.com/VincentVonk/soapui-system-theme/releases/latest). Extract the **entire ZIP** into a folder, preserving `dist/` and `licenses/`, then close SoapUI.
 2. Press **Win+R** and open `%USERPROFILE%\.soapuios\plugins`. Create the directory if it does not exist.
 3. Remove any previously installed `soapui-system-theme-*.jar`, such as version 0.3.0. Keep only one version of System Theme in this directory.
 4. Copy `dist\soapui-system-theme-0.3.1.jar` into that directory.
 5. Start SoapUI Open Source 5.10.0. A **Theme** menu appears at the top.
 6. Leave **Theme > Follow Windows** selected.
 
-Alternatively, run `.\Install.ps1` in PowerShell from the extracted directory. If your execution policy blocks scripts, use the manual copy steps above.
+Alternatively, after removing any older version, open PowerShell in the extracted directory and run:
+
+```powershell
+.\Install.ps1
+```
+
+If your execution policy blocks scripts, use the manual copy steps above. Developers who built from source can use the same installation steps with their local `dist/` directory.
 
 No SoapUI installation files or Windows settings are modified. The plugin does not download dependencies; it uses libraries already included with SoapUI.
 
@@ -88,19 +98,48 @@ The build tries to detect the JDK and SoapUI automatically; running just `.\buil
 
 The build creates `dist\soapui-system-theme-0.3.1.jar`. The `--release 17` option ensures compatibility with SoapUI's Java 17. Tests use SoapUI's own JRE and work in `build\test-home` and `build\ui-home`; they do not change your actual Windows theme or SoapUI projects. For graphical regression tests, test windows are placed offscreen without keyboard focus and rendered to PNG. The actual desktop test uses a temporary preferences profile and a test implementation of Java Preferences, so your user registry is not used for Java preferences. SoapUI's legacy JGoodies version requires a desktop session, even when rendering to an image.
 
-## Package contents
+## Binary release contents
 
-- `dist/`: the build creates the installable plugin JAR here; this directory is not included in the source package.
-- `src/main/java/`: complete source code.
-- `src/test/java/`: regression and integration tests.
-- `build.ps1`: local build without downloads.
-- `test-ui.ps1`: tests the actual SoapUI desktop with the built plugin and a separate test profile.
+- `dist/soapui-system-theme-0.3.1.jar`: the tested, installable plugin. Keep this path intact for `Install.ps1`.
 - `Install.ps1`, `Uninstall.ps1`: optional installation helpers.
-- `TEST-REPORT.md`: checks performed and their limitations.
-- `build/`: tests create temporary profiles and PNG images here; these files are excluded from Git and the source package.
+- `README.md`: installation, use, and limitations.
 - `LICENSE`, `THIRD_PARTY_NOTICES.md`, `licenses/`: project license and separate library notices.
-- `.gitignore`, `.gitattributes`: exclusions and consistent line endings for Git.
-- `docs/GITHUB_SETUP.md`, `CHANGELOG.md`: GitHub instructions and version history.
+
+The binary ZIP contains these items directly at its root, with no extra wrapper directory. It contains no SoapUI/JDK libraries, source code, test profiles, or screenshots. The plugin JAR also includes the license notices under `META-INF/`.
+
+The source repository additionally contains `src/main/java/`, `src/test/java/`, `build.ps1`, `test-ui.ps1`, `release.ps1`, packaging checks in `tests/`, and [TEST-REPORT.md](https://github.com/VincentVonk/soapui-system-theme/blob/main/TEST-REPORT.md). Generated `build/`, `dist/`, and `releases/` directories are ignored by Git. See [CHANGELOG.md](https://github.com/VincentVonk/soapui-system-theme/blob/main/CHANGELOG.md) for version history.
+
+## Preparing a manual release (maintainers)
+
+From the source checkout, with the build requirements above installed, run:
+
+```powershell
+.\release.ps1 -Version 0.3.1
+# If automatic detection fails:
+.\release.ps1 -Version 0.3.1 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'
+```
+
+`-Version` is an optional assertion; the script reads the version from `SystemThemePlugin.java`. It checks the build/install/uninstall/UI-test JAR references, README heading, changelog, controller startup message and dependency-notice version. For a future version, update these references together, including other user-facing version strings in `ThemeController.java` and `Uninstall.ps1`.
+
+Every run calls `build.ps1` with **all tests enabled**, including the actual SoapUI desktop integration test. There is no `-SkipTests` option. The build cleans compiled classes and copied notices before compiling. Only after a successful build, tests, license-content checks, and ZIP path/content checks does the script write:
+
+```text
+releases/SoapUI-System-Theme.zip
+```
+
+The original `dist/soapui-system-theme-0.3.1.jar` is retained. A previous release ZIP is removed at the start of a new attempt, so a failed attempt does not leave an older ZIP ready to upload. The ZIP name stays fixed for every version; its JAR remains versioned. The script prints the ZIP's SHA-256 for reference. Repeated builds use the same process and layout; archive timestamps may differ.
+
+Run the isolated packaging regression checks separately with `powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\release.Tests.ps1`. These use a synthetic build fixture; they do not replace the real build/tests performed by `release.ps1`.
+
+To publish the first release **v0.3.1** yourself:
+
+1. Review the local changes, run `release.ps1` successfully, and check the extracted ZIP. You can try `Install.ps1`/`Uninstall.ps1` with `-PluginDirectory` pointing to a temporary directory.
+2. Commit and push the reviewed source changes yourself. Keep generated JARs/ZIPs out of the source commit. If you change any source or packaged documentation after testing, rebuild the release ZIP.
+3. Open the repository's [Releases page](https://github.com/VincentVonk/soapui-system-theme/releases), choose **Draft a new release**, create tag **v0.3.1** against the commit just pushed, and title it **SoapUI System Theme 0.3.1**. If that tag already exists, verify that it points to the intended commit.
+4. Add release notes from the changelog, state compatibility with Windows / SoapUI Open Source 5.10.0, and attach **releases/SoapUI-System-Theme.zip** as a release asset. Keep the asset name exactly **SoapUI-System-Theme.zip**.
+5. Review the draft, publish it as a full release (not a prerelease), and select it as the latest release. Check both README download links and download/extract the uploaded asset once.
+
+The release script never commits, tags, pushes, installs, or publishes. [GitHub documents the stable latest-release and asset links here](https://docs.github.com/en/repositories/releasing-projects-on-github/linking-to-releases).
 
 ## Technical references
 
@@ -115,6 +154,6 @@ No SoapUI or other third-party JARs are distributed with this package.
 
 ## Publishing and contributing
 
-Upload the extracted source files to the root of your repository. The ZIP contains no Git history, SoapUI installation files, or generated binaries. Keep LICENSE, THIRD_PARTY_NOTICES.md, and licenses/ with the source code. A locally built plugin JAR also includes these notices under META-INF/.
+Keep source code in Git and distribute the installable ZIP through GitHub Releases using the process above. Keep LICENSE, THIRD_PARTY_NOTICES.md, and licenses/ with both distributions.
 
 For changes, build and run the tests with build.ps1. When reporting UI issues, include your SoapUI version, Java version, theme setting, and affected screen. Use synthetic examples without credentials or actual request data.

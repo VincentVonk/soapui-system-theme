@@ -33,6 +33,14 @@ $dist = Join-Path $root 'dist'
 $temporary = Join-Path $root 'build\tmp'
 $resources = Join-Path $root 'build\resources'
 $notices = Join-Path $resources 'META-INF'
+# Remove compiled output and copied resources so deleted classes/notices cannot
+# leak into a later build or release. Keep test profiles and screenshots separate.
+foreach ($directory in $classes,$testClasses,$resources) {
+    $resolved = [IO.Path]::GetFullPath($directory)
+    $buildRoot = [IO.Path]::GetFullPath((Join-Path $root 'build')) + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolved.StartsWith($buildRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Unsafe build cleanup path.' }
+    if (Test-Path -LiteralPath $resolved) { Remove-Item -LiteralPath $resolved -Recurse -Force }
+}
 New-Item -ItemType Directory -Path $classes,$testClasses,$dist,$temporary,$notices -Force | Out-Null
 $cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src\main\java') -Filter '*.java' -Recurse | Select-Object -ExpandProperty FullName)

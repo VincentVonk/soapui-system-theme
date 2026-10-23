@@ -1,5 +1,14 @@
 # Changelog
 
+## Manual binary release preparation - 2026-10-23
+
+- Add release.ps1 to run the full build/tests and create releases/SoapUI-System-Theme.zip for manual upload to GitHub Releases.
+- Preserve dist/soapui-system-theme-0.3.1.jar and include installation helpers, README, project license and third-party notices/texts in the ZIP.
+- Check version references, embedded notices and exact ZIP contents before producing the release asset; remove an older ZIP when a new attempt starts.
+- Clean compiled classes and copied resources before builds to prevent stale output entering a release.
+- Document ready-to-install downloads, source/binary differences and the first v0.3.1 publication procedure; ignore generated release assets alongside build output.
+- Keep runtime version and behavior at 0.3.1. No remote publication is performed by the release script.
+
 ## Source publication preparation - 2026-10-23
 
 - Prepare the 0.3.1 source tree for a standalone GitHub repository.

@@ -35,4 +35,4 @@ Close SoapUI before installing the JAR or running `.\Install.ps1`. Keep only one
 
 ## Subsequent updates
 
-Work from the clone, review changes with `git diff`, and commit the intended source files and documentation. A plugin JAR or user ZIP can be provided separately as a GitHub Release, with the corresponding source version and license notices.
+Work from the clone, review changes with `git diff`, and commit the intended source files and documentation. To prepare a binary release, run `.\release.ps1 -Version 0.3.1`. It always runs the full build/tests and writes `releases\SoapUI-System-Theme.zip`, retaining the versioned JAR under `dist/` inside the ZIP. Follow the [manual release procedure](../README.md#preparing-a-manual-release-maintainers) to publish that asset yourself. The script does not commit, tag, push or publish.

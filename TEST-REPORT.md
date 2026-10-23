@@ -56,3 +56,18 @@ The source-only GitHub package was copied to a separate clean staging directory,
 All 20 Java files were compared with the previous 0.3.1 release: only MIT/copyright headers were added. Plugin runtime version and behavior remain 0.3.1. Build packaging adds license metadata; the installer error now explains that source users must build first.
 
 Git ignore rules were exercised in an isolated test repository. Generated output, local profiles, logs and environment files are ignored, while source, documentation and license files remain trackable. Local Markdown links were checked. The source ZIP excludes generated output, all JARs, Git history and screenshots. This is a publication/packaging update, not a new runtime feature release.
+
+## Manual binary release validation - 23 October 2026
+
+Validated locally in the Git checkout with Windows PowerShell 5.1, JDK 27.0.1.0.2 targeting Java 17, and the actual SoapUI 5.10.0 installation (its directory is still named `C:\Program Files\SmartBear\SoapUI-5.9.1`). Tests used SoapUI's bundled Java 17.0.12 runtime.
+
+- Ran `release.ps1 -Version 0.3.1 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.9.1' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'`. All 358 explicit assertions and the controller, real plugin-loader and real desktop scenarios passed. Tests were not skipped.
+- Seeded obsolete files in build/classes, build/test-classes and build/resources before the build. The clean build removed them, and they were absent from the release.
+- Verified the current project license, third-party notice and all seven license reference texts inside META-INF in the JAR by SHA-256, and rejected implementation classes outside the project's package.
+- Created `releases/SoapUI-System-Theme.zip` with exactly 13 files: the versioned JAR under dist/, five top-level scripts/documents/notices, and seven license texts. The release script checked paths and byte hashes against the local files. No host libraries or test profiles are included.
+- Extracted the actual ZIP, ran Install.ps1 against a temporary plugin directory, and verified that the installed JAR matched the built JAR. Uninstall.ps1 removed it while retaining an unrelated plugin. Installing alongside an older System Theme JAR was blocked.
+- Ran tests/release.Tests.ps1 in both Windows PowerShell 5.1 and PowerShell 7: 24 packaging/installer checks passed in each. These use a synthetic build fixture, covering repeat packaging, installer round trip, mismatched versions, build failure, missing notices, foreign classes and missing release files. They are separate from the real Java/UI tests above.
+- Visually inspected newly generated actual desktop screenshots in dark mode and after restoring light mode. Theme controls, toolbars and project overview remain readable and restore correctly.
+- Verified Git ignores the build log, versioned JAR and release ZIP. The user's newly uploaded .gitignore/.gitattributes were fetched; only /releases/ was added to .gitignore.
+
+The JavaFX unnamed-module warning and SoapUI's missing optional ext-directory warning did not fail the tests. The temporary unreadable Windows preference warning is part of the controller failure-path test. The live online starter page and later SoapUI versions were not validated in this run. No changes were committed or pushed, and no GitHub release or tag was created. Publication and downloading the uploaded asset remain manual follow-up steps.
