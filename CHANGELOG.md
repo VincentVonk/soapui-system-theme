@@ -1,5 +1,11 @@
 # Changelog
 
+## Source namespace cleanup - 2026-10-25
+
+- Use the project namespace soapui.systemtheme for Java classes, tests and embedded resources, with matching source directories.
+- Update build/test entry points, resource paths and release-package validation to the new namespace.
+- Retain version 0.3.2, the published plugin identity and existing behavior. No new release is created by this source cleanup.
+
 ## 0.3.2 - 2026-10-23
 
 - Make default HTML text in read-only error/details dialogs readable in dark mode, preserving message text/document identity and restoring the original display property in Light. Leave editable HTML request/response documents untouched.

@@ -97,3 +97,13 @@ Scope: error-message readability and the white tab-layout icon, retained within 
 - The full release build passes the prior 378 explicit component/native checks plus these 57 checks, for 435 in total, alongside the controller, real loader and real desktop integration scenarios. The 24 isolated packaging/installer checks remain separate from those Java/UI checks.
 
 The display-property fix applies to default HTML text colors; it does not override explicitly styled HTML colors. Screenshots and test profiles remain under ignored build/. The final ZIP retains the 0.3.2 JAR name and complete license notices. No commit, push or release publication was performed.
+
+## Source namespace cleanup - 25 October 2026
+
+Java implementation classes, tests and the embedded Windows helper now live under soapui.systemtheme / soapui/systemtheme. Build/test entry points, the isolated Java Preferences factory, release validation paths and synthetic packaging fixtures use the same namespace. The published plugin group ID and version 0.3.2 remain unchanged.
+
+The Windows/SoapUI 5.10.0 full build passed all 435 explicit checks plus the controller, actual plugin-loader and desktop integration scenarios. The loader test also checks that the published ID is retained and that the project-namespace entry point is loaded through the packaged JAR classloader. The 24 isolated packaging/installer checks passed against the renamed paths.
+
+Compared with the previous source revision, production Java changes consist only of the package declarations and an explanatory compatibility comment. The embedded helper content is identical. The clean JAR contains the new class/resource paths with no old namespace entries. Newly generated dark/light desktop screenshots were visually checked. Copyright notices, GitHub URLs, settings and functionality are unchanged.
+
+Only build.ps1 was used for the real build; release.ps1 was exercised solely in the temporary synthetic packaging fixture. No version bump, real release ZIP regeneration, installation into the user's plugin directory, commit, push, tag or GitHub release was performed. The existing releases/SoapUI-System-Theme.zip was checked by SHA-256 and remains unchanged.

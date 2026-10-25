@@ -26,7 +26,7 @@ $output = Join-Path $releaseDirectory 'SoapUI-System-Theme.zip'
 # A failed attempt must not leave an older ZIP looking ready to upload.
 if (Test-Path -LiteralPath $output -PathType Leaf) { Remove-Item -LiteralPath $output }
 
-$pluginSource = Get-Content -LiteralPath (Join-Path $root 'src/main/java/nl/vincentvonk/soapui/theme/SystemThemePlugin.java') -Raw
+$pluginSource = Get-Content -LiteralPath (Join-Path $root 'src/main/java/soapui/systemtheme/SystemThemePlugin.java') -Raw
 $versionMatch = [regex]::Match($pluginSource, '\bversion\s*=\s*"(\d+\.\d+\.\d+)"')
 if (-not $versionMatch.Success) { throw 'Cannot read the version from SystemThemePlugin.java.' }
 $pluginVersion = $versionMatch.Groups[1].Value
@@ -46,7 +46,7 @@ $versionChecks = @{
     'README.md' = "(?m)^# SoapUI System Theme $([regex]::Escape($Version))\r?$"
     'CHANGELOG.md' = "(?m)^## $([regex]::Escape($Version)) - "
     'THIRD_PARTY_NOTICES.md' = "SoapUI System Theme $([regex]::Escape($Version))\b"
-    'src/main/java/nl/vincentvonk/soapui/theme/ThemeController.java' = "System Theme $([regex]::Escape($Version)) started"
+    'src/main/java/soapui/systemtheme/ThemeController.java' = "System Theme $([regex]::Escape($Version)) started"
 }
 foreach ($file in $versionChecks.Keys) {
     if ((Get-Content -LiteralPath (Join-Path $root $file) -Raw) -notmatch $versionChecks[$file]) {
@@ -73,9 +73,9 @@ if (-not (Test-Path -LiteralPath $jarPath -PathType Leaf)) { throw "Build did no
 # Verify the JAR contains project classes and the current notices, without host libraries.
 $jarArchive = [IO.Compression.ZipFile]::OpenRead($jarPath)
 try {
-    if (-not $jarArchive.GetEntry('nl/vincentvonk/soapui/theme/SystemThemePlugin.class')) { throw 'Plugin entry point is missing from the JAR.' }
+    if (-not $jarArchive.GetEntry('soapui/systemtheme/SystemThemePlugin.class')) { throw 'Plugin entry point is missing from the JAR.' }
     foreach ($entry in $jarArchive.Entries) {
-        if ($entry.FullName.EndsWith('.class') -and -not $entry.FullName.StartsWith('nl/vincentvonk/soapui/theme/')) {
+        if ($entry.FullName.EndsWith('.class') -and -not $entry.FullName.StartsWith('soapui/systemtheme/')) {
             throw "Unexpected implementation class in JAR: $($entry.FullName)"
         }
     }

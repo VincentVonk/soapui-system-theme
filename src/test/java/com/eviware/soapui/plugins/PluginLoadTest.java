@@ -19,6 +19,15 @@ public final class PluginLoadTest {
         InstalledPluginRecord record = loader.loadPlugin(new File(args[0]), Collections.emptyList());
         if (!record.plugin.getInfo().getId().toString().contains("System Theme"))
             throw new AssertionError("Plugin metadata not loaded");
+        if (!"nl.vincentvonk.soapui".equals(record.plugin.getInfo().getId().getGroupId()))
+            throw new AssertionError("Published plugin identity changed during the namespace cleanup");
+        // SoapUI may wrap the scanned entry point; inspect its JAR classloader.
+        Class<?> entryPoint = record.pluginClassLoader.loadClass("soapui.systemtheme.SystemThemePlugin");
+        if (entryPoint.getClassLoader() != record.pluginClassLoader)
+            throw new AssertionError("Plugin entry point was not loaded from the packaged JAR");
+        Plugin instance = (Plugin) entryPoint.getDeclaredConstructor().newInstance();
+        if (!record.plugin.hasSameIdAs(instance))
+            throw new AssertionError("Discovered plugin differs from the project-namespace entry point");
         if (!record.plugin.isActive()) throw new AssertionError("Windows plugin not active");
         System.out.println("PASS: real SoapUI 5.10.0 JAR discovery, classloading, metadata and initialize() in headless mode");
     }

@@ -27,10 +27,10 @@ try {
         Copy-Item -LiteralPath (Join-Path $root $file) -Destination $fixture
     }
     Copy-Item -LiteralPath (Join-Path $root 'licenses') -Destination $fixture -Recurse
-    $sourceDirectory = Join-Path $fixture 'src/main/java/nl/vincentvonk/soapui/theme'
+    $sourceDirectory = Join-Path $fixture 'src/main/java/soapui/systemtheme'
     New-Item -ItemType Directory -Path $sourceDirectory -Force | Out-Null
     foreach ($file in 'SystemThemePlugin.java','ThemeController.java') {
-        Copy-Item -LiteralPath (Join-Path $root "src/main/java/nl/vincentvonk/soapui/theme/$file") -Destination $sourceDirectory
+        Copy-Item -LiteralPath (Join-Path $root "src/main/java/soapui/systemtheme/$file") -Destination $sourceDirectory
     }
     $pluginSource = Get-Content -LiteralPath (Join-Path $sourceDirectory 'SystemThemePlugin.java') -Raw
     $version = [regex]::Match($pluginSource, '\bversion\s*=\s*"(\d+\.\d+\.\d+)"').Groups[1].Value
@@ -40,8 +40,8 @@ param([string]$SoapUiHome, [string]$JdkHome)
 $ErrorActionPreference = 'Stop'
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'fail-build')) { throw 'Synthetic build failure.' }
 $payload = Join-Path $PSScriptRoot 'build/fake-jar'
-New-Item -ItemType Directory -Path (Join-Path $payload 'nl/vincentvonk/soapui/theme'),(Join-Path $payload 'META-INF'),(Join-Path $PSScriptRoot 'dist') -Force | Out-Null
-Set-Content -LiteralPath (Join-Path $payload 'nl/vincentvonk/soapui/theme/SystemThemePlugin.class') -Value 'Synthetic test entry point; not executable Java.'
+New-Item -ItemType Directory -Path (Join-Path $payload 'soapui/systemtheme'),(Join-Path $payload 'META-INF'),(Join-Path $PSScriptRoot 'dist') -Force | Out-Null
+Set-Content -LiteralPath (Join-Path $payload 'soapui/systemtheme/SystemThemePlugin.class') -Value 'Synthetic test entry point; not executable Java.'
 foreach ($file in 'LICENSE','THIRD_PARTY_NOTICES.md') { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $payload 'META-INF') -Force }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'licenses') -Destination (Join-Path $payload 'META-INF') -Recurse -Force
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'omit-notice')) { Remove-Item -LiteralPath (Join-Path $payload 'META-INF/LICENSE') }

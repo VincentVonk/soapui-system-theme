@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Vincent Vonk
 
-package nl.vincentvonk.soapui.theme;
+package soapui.systemtheme;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

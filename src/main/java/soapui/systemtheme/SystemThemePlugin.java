@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Vincent Vonk
 
-package nl.vincentvonk.soapui.theme;
+package soapui.systemtheme;
 
 import com.eviware.soapui.SoapUI;
 import com.eviware.soapui.plugins.PluginAdapter;
@@ -11,6 +11,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 /** Entry point discovered by the unmodified SoapUI Open Source plugin loader. */
+// Retain the published plugin identity independently of the internal Java namespace.
 @PluginConfiguration(groupId = "nl.vincentvonk.soapui", name = "System Theme",
     version = "0.3.2", minimumSoapUIVersion = "5.10.0", autoDetect = false,
     description = "Follow Windows app light/dark mode; restore SoapUI's original light appearance.")

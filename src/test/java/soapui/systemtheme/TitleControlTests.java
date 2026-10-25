@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Vincent Vonk
 
-package nl.vincentvonk.soapui.theme;
+package soapui.systemtheme;
 
 import com.jgoodies.looks.plastic.PlasticXPLookAndFeel;
 import java.awt.*;

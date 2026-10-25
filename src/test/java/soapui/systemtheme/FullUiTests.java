@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Vincent Vonk
 
-package nl.vincentvonk.soapui.theme;
+package soapui.systemtheme;
 
 import com.eviware.soapui.SoapUI;
 import com.eviware.soapui.StandaloneSoapUICore;
@@ -29,7 +29,7 @@ public final class FullUiTests {
         catch (Throwable e) { e.printStackTrace(); System.exit(1); }
     }
     private static void run(String[] args) throws Exception {
-        System.setProperty("java.util.prefs.PreferencesFactory", "nl.vincentvonk.soapui.theme.MemoryPreferencesFactory");
+        System.setProperty("java.util.prefs.PreferencesFactory", "soapui.systemtheme.MemoryPreferencesFactory");
         output = Path.of(args[0]); Files.createDirectories(output);
         Path home = Path.of(System.getProperty("user.home")); Files.createDirectories(home);
         Path settings = home.resolve("soapui-settings.xml");

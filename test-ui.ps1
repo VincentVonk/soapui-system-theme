@@ -20,5 +20,5 @@ Copy-Item -LiteralPath (Join-Path $base 'dist\soapui-system-theme-0.3.2.jar') -D
 $cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')
 $nativeOptions = @()
 if (Test-Path -LiteralPath (Join-Path $base 'build\native-titlebar\supported')) { $nativeOptions = @('-Dsoapui.theme.testNativeTitleBar=true') }
-& (Join-Path $SoapUiHome 'jre\bin\java.exe') '-Djava.awt.headless=false' @nativeOptions "-Duser.home=$uiHome" "-Djava.io.tmpdir=$(Join-Path $base 'build\tmp')" "-Dsoapui.home=$(Join-Path $SoapUiHome 'bin')" --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.desktop/java.beans=ALL-UNNAMED -cp "$(Join-Path $base 'build\test-classes');$cp" nl.vincentvonk.soapui.theme.FullUiTests (Join-Path $base 'build\full-ui')
+& (Join-Path $SoapUiHome 'jre\bin\java.exe') '-Djava.awt.headless=false' @nativeOptions "-Duser.home=$uiHome" "-Djava.io.tmpdir=$(Join-Path $base 'build\tmp')" "-Dsoapui.home=$(Join-Path $SoapUiHome 'bin')" --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.desktop/java.beans=ALL-UNNAMED -cp "$(Join-Path $base 'build\test-classes');$cp" soapui.systemtheme.FullUiTests (Join-Path $base 'build\full-ui')
 if ($LASTEXITCODE -ne 0) { throw 'Full SoapUI desktop integration test failed.' }

@@ -61,21 +61,21 @@ if (-not $SkipTests) {
     # JGoodies 2.2 reads screen DPI even for offscreen rendering; a Windows desktop session is required.
     $testJava = Join-Path $SoapUiHome 'jre\bin\java.exe'
     if (-not (Test-Path -LiteralPath $testJava)) { $testJava = $java }
-    & $testJava '-Djava.awt.headless=false' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.ThemeTests (Join-Path $root 'build')
+    & $testJava '-Djava.awt.headless=false' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.ThemeTests (Join-Path $root 'build')
     if ($LASTEXITCODE -ne 0) { throw 'Theme tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.LegacyPaintTests
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.LegacyPaintTests
     if ($LASTEXITCODE -ne 0) { throw 'Legacy toolbar and renderer tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.TitleControlTests
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.TitleControlTests
     if ($LASTEXITCODE -ne 0) { throw 'Internal-window control tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.DialogThemeTests (Join-Path $root 'build\dialogs')
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.DialogThemeTests (Join-Path $root 'build\dialogs')
     if ($LASTEXITCODE -ne 0) { throw 'Dialog theme tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.ReadabilityTests (Join-Path $root 'build\readability')
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.ReadabilityTests (Join-Path $root 'build\readability')
     if ($LASTEXITCODE -ne 0) { throw 'Error-text and layout-icon readability tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.WebThemeTests (Join-Path $root 'build\web')
+    & $testJava '-Djava.awt.headless=false' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.WebThemeTests (Join-Path $root 'build\web')
     if ($LASTEXITCODE -ne 0) { throw 'Web theme tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.ControllerTests (Join-Path $root 'build')
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.ControllerTests (Join-Path $root 'build')
     if ($LASTEXITCODE -ne 0) { throw 'Automatic switching integration tests failed.' }
-    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" nl.vincentvonk.soapui.theme.WindowsTitleBarTests (Join-Path $root 'build\native-titlebar')
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.WindowsTitleBarTests (Join-Path $root 'build\native-titlebar')
     if ($LASTEXITCODE -ne 0) { throw 'Native Windows title-bar integration tests failed.' }
     & $testJava '-Djava.awt.headless=true' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$cp" com.eviware.soapui.plugins.PluginLoadTest $output
     if ($LASTEXITCODE -ne 0) { throw 'SoapUI plugin-loader integration test failed.' }

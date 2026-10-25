@@ -106,6 +106,8 @@ Close SoapUI, remove `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.2.
 
 Requirements: Windows, a desktop session, a **JDK 17 or newer**, and SoapUI Open Source 5.10.0. Maven and internet access are not required.
 
+Java sources, tests and embedded resources use the project namespace `soapui.systemtheme` (`soapui/systemtheme/` in the source tree). The published plugin ID is retained for compatibility with existing installations.
+
 ```powershell
 .\build.ps1 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0'
 ```
