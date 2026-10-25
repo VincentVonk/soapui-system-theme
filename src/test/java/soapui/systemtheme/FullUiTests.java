@@ -21,8 +21,12 @@ public final class FullUiTests {
     private static Path output;
     private static JDialog preferences, newProject;
     private static volatile boolean capturingNative;
+    private static com.eviware.soapui.impl.wsdl.WsdlProject firstProject;
+    private static JMenuBar originalBar;
+    private static JMenu[] originalMenus;
+    private static final java.util.Map<JMenuItem, KeyStroke> fileAccelerators = new java.util.IdentityHashMap<>();
     public static void main(String[] args) {
-        Thread watchdog = new Thread(() -> { try { Thread.sleep(45000); } catch (InterruptedException e) { return; }
+        Thread watchdog = new Thread(() -> { try { Thread.sleep(90000); } catch (InterruptedException e) { return; }
             System.err.println("Full SoapUI UI test timed out"); System.exit(2); }, "ui-test-watchdog");
         watchdog.setDaemon(true); watchdog.start();
         try { run(args); System.exit(0); }
@@ -67,8 +71,15 @@ public final class FullUiTests {
         waitForMenu();
         SwingUtilities.invokeAndWait(() -> {
             try { snapshot("soapui-light.png");
+                originalBar = SoapUI.getFrame().getJMenuBar();
+                originalMenus = new JMenu[originalBar.getMenuCount()];
+                for (int i=0; i<originalMenus.length; i++) originalMenus[i] = originalBar.getMenu(i);
+                for (Component child : originalMenus[0].getMenuComponents()) if (child instanceof JMenuItem)
+                    fileAccelerators.put((JMenuItem)child, ((JMenuItem)child).getAccelerator());
                 com.eviware.soapui.impl.wsdl.WsdlProject project=(com.eviware.soapui.impl.wsdl.WsdlProject)
                     SoapUI.getWorkspace().createProject("Theme example",(java.io.File)null);
+                firstProject = project;
+                reproduceLegacyMenuFailure(project);
                 project.addNewTestSuite("Local regression").addNewTestCase("Example case");
                 com.eviware.soapui.support.UISupport.showDesktopPanel(project);
                 SoapUI.getFrame().validate(); snapshot("soapui-project-light.png");
@@ -78,11 +89,22 @@ public final class FullUiTests {
         Thread.sleep(600);
         nativeSnapshot("soapui-native-dark.png", true);
         SwingUtilities.invokeAndWait(() -> {
+            try { checkDarkWorkflows(); } catch (Exception e) { throw new RuntimeException(e); }
+        });
+        // Newly created components are styled by the controller's queued EDT batch.
+        SwingUtilities.invokeAndWait(() -> {
             try { snapshot("soapui-dark.png");
                 BufferedImage image=ImageIO.read(output.resolve("soapui-dark.png").toFile());
                 StringBuilder dump = new StringBuilder(); dump(SoapUI.getFrame(),dump,0);
                 Files.writeString(output.resolve("component-tree.txt"),dump);
                 checkToolbars(SoapUI.getFrame(),image);
+                Point barPoint = SwingUtilities.convertPoint(originalBar, originalBar.getWidth()-30, originalBar.getHeight()/2, SoapUI.getFrame());
+                if (!new Color(image.getRGB(barPoint.x,barPoint.y)).equals(new Color(0x25282e)))
+                    throw new AssertionError("Original menu bar paint remains light");
+                JMenu fileMenu = originalMenus[0];
+                Point mouse = SwingUtilities.convertPoint(fileMenu, fileMenu.getWidth()/2, fileMenu.getHeight()/2, SoapUI.getFrame().getLayeredPane());
+                if (SwingUtilities.getDeepestComponentAt(SoapUI.getFrame().getLayeredPane(),mouse.x,mouse.y) != fileMenu)
+                    throw new AssertionError("Menu paint overlay intercepted a mouse target");
                 checkWindowControls(SoapUI.getFrame());
                 JInternalFrame internal=findInternalFrame(SoapUI.getFrame());
                 if(internal==null)throw new AssertionError("No actual internal frame");
@@ -112,6 +134,102 @@ public final class FullUiTests {
         SwingUtilities.invokeAndWait(() -> { preferences.dispose();newProject.dispose();SoapUI.getFrame().dispose(); });
         System.out.println("PASS: actual SoapUI 5.10.0 desktop, About, Preferences, New SOAP Project, new dialog events and restoration (isolated profile)");
     }
+    /** Isolate the old algorithm against the real host, then put every menu back immediately. */
+    private static void reproduceLegacyMenuFailure(com.eviware.soapui.impl.wsdl.WsdlProject project) throws Exception {
+        JMenuBar replacement = new JMenuBar();
+        while (originalBar.getComponentCount() > 0) replacement.add(originalBar.getComponent(0));
+        SoapUI.getFrame().setJMenuBar(replacement);
+        boolean reproduced = false;
+        try {
+            java.lang.reflect.Method update = com.eviware.soapui.support.swing.MenuBuilderHelper.class.getDeclaredMethod(
+                "buildMenu", com.eviware.soapui.model.ModelItem.class, String.class, com.eviware.soapui.model.tree.SoapUITreeNode.class);
+            update.setAccessible(true);
+            try { update.invoke(null, project, "Project", null); }
+            catch (java.lang.reflect.InvocationTargetException error) {
+                if (!(error.getCause() instanceof NullPointerException)) throw error;
+                reproduced = true;
+            }
+        } finally {
+            while (replacement.getComponentCount() > 0) originalBar.add(replacement.getComponent(0));
+            SoapUI.getFrame().setJMenuBar(originalBar);
+        }
+        if (!reproduced) throw new AssertionError("Old menu transfer did not reproduce the host menu-update failure");
+        System.out.println("PASS: old menu-transfer algorithm reproduces NullPointerException in real SoapUI MenuBuilderHelper.buildMenu");
+    }
+
+    private static void checkDarkWorkflows() throws Exception {
+        if (SoapUI.getMenuBar() != originalBar || SoapUI.getFrame().getJMenuBar() != originalBar)
+            throw new AssertionError("SoapUI lost its original menu bar in Dark");
+        for (int i=0; i<originalMenus.length; i++)
+            if (originalBar.getMenu(i) != originalMenus[i]) throw new AssertionError("Menu identity changed");
+        fileAccelerators.forEach((item, accelerator) -> {
+            if (item.getParent() != originalMenus[0].getPopupMenu() || !java.util.Objects.equals(accelerator, item.getAccelerator()))
+                throw new AssertionError("File menu item or keyboard accelerator changed");
+        });
+        originalMenus[0].doClick();
+        if (MenuSelectionManager.defaultManager().getSelectedPath().length == 0)
+            throw new AssertionError("Original File menu no longer opens");
+        MenuSelectionManager.defaultManager().clearSelectedPath();
+        // Save and import a new synthetic project after Dark is already active.
+        com.eviware.soapui.impl.wsdl.WsdlProject fixture = new com.eviware.soapui.impl.wsdl.WsdlProject();
+        fixture.setName("Imported while dark");
+        fixture.addNewTestSuite("Imported suite").addNewTestCase("Imported case");
+        Path file = output.resolve("synthetic-import.xml"); fixture.saveAs(file.toString());
+        com.eviware.soapui.impl.wsdl.WsdlProject imported = (com.eviware.soapui.impl.wsdl.WsdlProject)
+            SoapUI.getWorkspace().importProject(file.toString());
+        if (imported == null || imported.getTestSuiteCount() != 1) throw new AssertionError("Dark project import failed");
+        for (var project : new com.eviware.soapui.impl.wsdl.WsdlProject[]{firstProject, imported}) {
+            var suite = project.getTestSuiteAt(0); var testCase = suite.getTestCaseAt(0);
+            for (var item : new com.eviware.soapui.model.ModelItem[]{project, suite, testCase}) {
+                SoapUI.getNavigator().selectModelItem(item);
+                var path = SoapUI.getNavigator().getTreePath(item);
+                if (path == null) throw new AssertionError("Synthetic item missing from navigator");
+                com.eviware.soapui.support.swing.MenuBuilderHelper.buildTreeNodeMenu(
+                    (com.eviware.soapui.model.tree.SoapUITreeNode)path.getLastPathComponent());
+                String name = item == project ? "Project" : item == suite ? "Suite" : "Case";
+                JMenu dynamic = com.eviware.soapui.support.swing.MenuBuilderHelper.getMenu(name);
+                if (dynamic == null || dynamic.getItemCount() == 0) throw new AssertionError("Dynamic menu is empty: " + name);
+                // Invoke the host's Open Editor action when exposed, without running tests or requests.
+                boolean opened = false;
+                for (int i=0; i<dynamic.getItemCount(); i++) {
+                    JMenuItem action = dynamic.getItem(i);
+                    if (action != null && "Open Editor".equals(action.getText()) && action.isEnabled()) {
+                        action.doClick(); opened = true; break;
+                    }
+                }
+                if (!opened) com.eviware.soapui.support.UISupport.showDesktopPanel(item);
+                SoapUI.getDesktop().closeDesktopPanel(item);
+                com.eviware.soapui.support.UISupport.showDesktopPanel(item);
+                SoapUI.getDesktop().closeDesktopPanel(item);
+            }
+        }
+        var testCase = imported.getTestSuiteAt(0).getTestCaseAt(0);
+        var step = testCase.addTestStep("groovy", "Unsaved synthetic editor");
+        com.eviware.soapui.support.UISupport.showDesktopPanel(step);
+        org.fife.ui.rsyntaxtextarea.RSyntaxTextArea editor = findSyntax(SoapUI.getFrame());
+        if (editor == null) throw new AssertionError("Real Groovy editor not found");
+        editor.setText("// unsaved synthetic text; never executed\nreturn 42");
+        editor.setCaretPosition(4); editor.moveCaretPosition(15);
+        var document = editor.getDocument(); String text = editor.getText();
+        for (int cycle=0; cycle<3; cycle++) {
+            menu().getItem(1).doClick(); menu().getItem(2).doClick();
+            if (editor.getDocument() != document || !editor.getText().equals(text)
+                || editor.getCaret().getDot()!=15 || editor.getCaret().getMark()!=4)
+                throw new AssertionError("Actual editor document, unsaved text or selection changed");
+        }
+        SoapUI.getDesktop().closeDesktopPanel(step);
+        com.eviware.soapui.support.UISupport.showDesktopPanel(firstProject);
+        SoapUI.getFrame().validate();
+        System.out.println("PASS: import in Dark, project/suite/case selection, dynamic menu actions, repeated editor open/close, three theme cycles with unsaved Groovy document and selection");
+    }
+    private static org.fife.ui.rsyntaxtextarea.RSyntaxTextArea findSyntax(Component c) {
+        if (c instanceof org.fife.ui.rsyntaxtextarea.RSyntaxTextArea) return (org.fife.ui.rsyntaxtextarea.RSyntaxTextArea)c;
+        if (c instanceof Container) for (Component child : ((Container)c).getComponents()) {
+            var result = findSyntax(child); if (result != null) return result;
+        }
+        return null;
+    }
+
     private static void checkAbout() throws Exception {
         JMenuItem about=null;JMenuBar bar=SoapUI.getFrame().getJMenuBar();
         for(int i=0;i<bar.getMenuCount();i++) {
@@ -238,8 +356,12 @@ public final class FullUiTests {
         if (!Boolean.getBoolean("soapui.theme.testNativeTitleBar")) return;
         capturingNative=true;
         Rectangle[] bounds = new Rectangle[1];
+        Point[] menuSample = new Point[1];
         SwingUtilities.invokeAndWait(() -> {
-            JFrame frame = SoapUI.getFrame(); frame.setAlwaysOnTop(true);frame.setLocation(50,50);bounds[0]=frame.getBounds();
+            JFrame frame = SoapUI.getFrame(); frame.setAlwaysOnTop(true); frame.setLocation(50,50); frame.toFront();
+            bounds[0]=frame.getBounds();
+            JMenuBar bar = frame.getJMenuBar();
+            menuSample[0] = SwingUtilities.convertPoint(bar, bar.getWidth()-30, bar.getHeight()/2, frame);
         });
         try {
             Robot robot = new Robot(); long deadline = System.nanoTime()+10_000_000_000L;
@@ -247,11 +369,19 @@ public final class FullUiTests {
             do {
                 robot.delay(150);image=robot.createScreenCapture(bounds[0]);
                 Color caption=new Color(image.getRGB(500,15));
-                if(!expectDark || (caption.getRed()<80&&caption.getGreen()<80&&caption.getBlue()<80))break;
-                if(System.nanoTime()>deadline) {
-                    ImageIO.write(image,"png",output.resolve("native-titlebar-failure.png").toFile());
-                    throw new AssertionError("Actual SoapUI native title bar remains bright; frame="+SoapUI.getFrame().getBounds()+"; pixel="+caption);
+                // A dark pixel alone could belong to an unrelated foreground application.
+                // Require SoapUI's yellow native icon and the test frame's expected menu surface.
+                int yellow = 0;
+                for (int y=6; y<25; y++) for (int x=8; x<31; x++) {
+                    Color icon = new Color(image.getRGB(x,y));
+                    if (icon.getRed()>140 && icon.getGreen()>120 && icon.getBlue()<100) yellow++;
                 }
+                Color menuColor = new Color(image.getRGB(menuSample[0].x,menuSample[0].y));
+                Color expectedMenu = expectDark ? new Color(0x25282e) : Color.WHITE;
+                boolean ownFrame = yellow>15 && menuColor.equals(expectedMenu);
+                if(ownFrame && (!expectDark || (caption.getRed()<80&&caption.getGreen()<80&&caption.getBlue()<80)))break;
+                if(System.nanoTime()>deadline)
+                    throw new AssertionError("Native capture did not show the expected SoapUI test frame/title bar; icon pixels="+yellow+"; menu="+menuColor+"; caption="+caption+"; current bounds="+SoapUI.getFrame().getBounds()+"; showing="+SoapUI.getFrame().isShowing()+"; state="+SoapUI.getFrame().getExtendedState()+"; top="+SoapUI.getFrame().isAlwaysOnTop());
             }while(true);
             ImageIO.write(image,"png",output.resolve(name).toFile());
         } finally {

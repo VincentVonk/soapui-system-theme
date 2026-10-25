@@ -25,6 +25,13 @@ public final class PluginLoadTest {
         Class<?> entryPoint = record.pluginClassLoader.loadClass("soapui.systemtheme.SystemThemePlugin");
         if (entryPoint.getClassLoader() != record.pluginClassLoader)
             throw new AssertionError("Plugin entry point was not loaded from the packaged JAR");
+        String expectedVersion = (String) entryPoint.getField("VERSION").get(null);
+        try (var versionResource = entryPoint.getResourceAsStream("/META-INF/soapui-system-theme.version")) {
+            if (versionResource == null || !expectedVersion.equals(new String(versionResource.readAllBytes(), java.nio.charset.StandardCharsets.US_ASCII).trim()))
+                throw new AssertionError("Embedded binary version differs from central VERSION");
+        }
+        PluginConfiguration annotation = entryPoint.getAnnotation(PluginConfiguration.class);
+        if (!expectedVersion.equals(annotation.version())) throw new AssertionError("Plugin annotation differs from central VERSION");
         Plugin instance = (Plugin) entryPoint.getDeclaredConstructor().newInstance();
         if (!record.plugin.hasSameIdAs(instance))
             throw new AssertionError("Discovered plugin differs from the project-namespace entry point");

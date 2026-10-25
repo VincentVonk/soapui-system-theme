@@ -26,6 +26,10 @@ if (-not $JdkHome) { throw 'Specify -JdkHome for a JDK 17 or newer. A JRE alone 
 $javac = Join-Path $JdkHome 'bin\javac.exe'
 $jar = Join-Path $JdkHome 'bin\jar.exe'
 $java = Join-Path $JdkHome 'bin\java.exe'
+$pluginSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'src/main/java/soapui/systemtheme/SystemThemePlugin.java') -Raw
+$versionMatch = [regex]::Match($pluginSource, '\bVERSION\s*=\s*"(\d+\.\d+\.\d+)"')
+if (-not $versionMatch.Success) { throw 'Cannot read the central plugin VERSION.' }
+$version = $versionMatch.Groups[1].Value
 $root = $PSScriptRoot
 $classes = Join-Path $root 'build\classes'
 $testClasses = Join-Path $root 'build\test-classes'
@@ -46,10 +50,11 @@ $cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUi
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src\main\java') -Filter '*.java' -Recurse | Select-Object -ExpandProperty FullName)
 & $javac --release 17 -encoding UTF-8 -classpath $cp -d $classes @sources
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
-$output = Join-Path $dist 'soapui-system-theme-0.3.2.jar'
+$output = Join-Path $dist "soapui-system-theme-$version.jar"
 foreach ($noticeName in 'LICENSE','THIRD_PARTY_NOTICES.md') {
     Copy-Item -LiteralPath (Join-Path $root $noticeName) -Destination $notices -Force
 }
+Set-Content -LiteralPath (Join-Path $notices 'soapui-system-theme.version') -Value $version -Encoding ASCII
 Copy-Item -LiteralPath (Join-Path $root 'licenses') -Destination $notices -Recurse -Force
 Copy-Item -Path (Join-Path $root 'src\main\resources\*') -Destination $resources -Recurse -Force
 & $jar "-J-Djava.io.tmpdir=$temporary" --create --file $output -C $classes . -C $resources .
@@ -73,6 +78,8 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw 'Error-text and layout-icon readability tests failed.' }
     & $testJava '-Djava.awt.headless=false' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.WebThemeTests (Join-Path $root 'build\web')
     if ($LASTEXITCODE -ne 0) { throw 'Web theme tests failed.' }
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.RecoveryTests
+    if ($LASTEXITCODE -ne 0) { throw 'Failure recovery tests failed.' }
     & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.ControllerTests (Join-Path $root 'build')
     if ($LASTEXITCODE -ne 0) { throw 'Automatic switching integration tests failed.' }
     & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.WindowsTitleBarTests (Join-Path $root 'build\native-titlebar')

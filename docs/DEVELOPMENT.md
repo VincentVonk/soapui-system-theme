@@ -67,14 +67,14 @@ Tests use `build/test-home` and `build/ui-home`, rather than the real user profi
 The full desktop test uses a test-only in-memory Java Preferences factory, avoiding user-registry preference writes.
 It creates synthetic local content and does not send API requests or execute user test scripts.
 Most rendering is offscreen. Windows 11 native-title-bar checks briefly show test windows without requesting keyboard focus
-and capture compositor output, because Swing's `printAll` cannot verify DWM's native title bar.
+and capture compositor output, because Swing's `printAll` cannot verify DWM's native title bar. The desktop capture checks the SoapUI native icon and expected menu surface before accepting title-bar pixels; the interactive test window must be unobscured.
 SoapUI's legacy JGoodies library still requires a desktop session, even for offscreen rendering.
 
 The web test starts with page scripts disabled and executes only the bundled UI scripts needed by the fixtures,
 skipping Google Analytics. Its HTTP/2-loader workaround is test-only; the plugin changes no network setting.
 See the [test report](../TEST-REPORT.md) for the original environment, exact checks, screenshots inspected and caveats.
 Its dated entries are historical evidence, not a claim that those checks ran during every documentation update.
-The later 0.3.2 entries record 435 explicit checks plus the controller/loader/desktop scenarios; the earlier 358/378 totals cover earlier scopes.
+The 25 October reliability run records 454 explicit checks plus the controller/loader/desktop scenarios; the earlier 358/378 totals cover earlier scopes.
 
 A useful manual acceptance check is to keep unsaved request text and a selection, let the existing Windows scheduler change
 the app theme, and open another request. Return to Light and check appearance, text and selection. Allow approximately 3–5 seconds after an OS change.
@@ -96,6 +96,12 @@ The Java namespace is `soapui.systemtheme`. The published plugin group ID remain
 so the namespace cleanup does not change the identity recognized by SoapUI.
 The minimum SoapUI version is metadata, rather than proof of compatibility with every later version.
 
+## Version source and binary metadata
+
+`SystemThemePlugin.VERSION` is the central compile-time version constant. The plugin annotation, startup/About text, build and desktop-test scripts use that source. The build embeds the same value in `META-INF/soapui-system-theme.version`; loader and release checks compare the binary value with the source version.
+
+The standalone installer/uninstaller obtain the packaged version from the unique project-version reference in `THIRD_PARTY_NOTICES.md`, which already belongs to the binary ZIP. They do not need Java sources or an additional helper file. Release preparation checks that notices, documentation and scripts agree with the source constant and preserves the existing ZIP layout. Documentation references still require an intentional update for a future version; they are checked rather than silently rewritten.
+
 ## Theme detection and switching
 
 `ThemeController` adds the Theme menu, loads the saved mode and polls the Windows preference on a background worker.
@@ -109,7 +115,7 @@ AppsUseLightTheme
 ```
 
 `0` means Dark; `1` means Light. The plugin follows the **application** theme, rather than only the taskbar color or system theme.
-The ordinary polling interval is three seconds. Existing Windows schedulers, including Auto Dark Mode / Dark Mode X,
+The polling interval is three seconds while **Follow Windows** is selected. Manual Light/Dark modes suspend OS queries. Returning to Follow Windows immediately schedules a fresh background reading and retains the current appearance until a valid result arrives. A generation token discards results from an earlier selection, including work already in flight when manual mode is chosen. Existing Windows schedulers, including Auto Dark Mode / Dark Mode X,
 control the time of the OS transition; this plugin does not create schedules.
 An unreadable preference retains the current appearance, logs a warning and is retried. Manual overrides remain available.
 
@@ -125,9 +131,11 @@ Existing request/response and script documents and project models are not rebuil
 The targeted editor/controller tests check document identity, text and editor-selection preservation; those checks do not establish coverage of every editor or third-party component.
 Components created in Dark without a prior Light snapshot receive restored look-and-feel defaults when returning to Light.
 
+Restoration attempts independent steps even when one fails. Component snapshots and global defaults are retained until the complete restore succeeds, allowing another Light request to retry. While restoration is incomplete, the controller does not patch newly opened components as Dark. A new Dark request first completes the pending restoration before capturing a new baseline. The controller requests native Light restoration even when Swing restoration reports an error.
+
 Important adaptations include:
 
-- SoapUI's main menu bar paints a fixed white background. Dark mode temporarily substitutes a standard Swing menu bar with the same menus/actions; Light restores the original bar.
+- SoapUI's main menu bar paints a fixed white background and is also retained internally by SoapUI for dynamic menu updates. `MenuBarTheme` adds a paint-only surface above that bar in the layered pane. It does not move or replace the bar, menus, actions or accelerator bindings; its hit test passes mouse events to the original controls. Bounds follow the original bar, the surface stays below popups, and Light removes it.
 - Main, navigator, inspector/log and project-overview toolbars use temporary Swing `JLayer` painting guards, preserving the actual bars, controls, actions and layout. Light removes those guards.
 - Neutral dark icon pixels receive more contrast without modifying the source image. Colored status indicators retain their colors where possible.
 - Tables resist later light striping from the host; tree renderers and scrollbars are styled and restored.
@@ -168,6 +176,8 @@ The original embedded PowerShell helper:
 
 The first helper startup can take a few seconds. If the helper cannot start or is restricted by local policy,
 the Swing theme can still work while native title bars retain their ordinary appearance.
+An unsupported helper response disables further attempts for that session. A transient startup/protocol failure closes the failed helper and blocks automatic window-refresh retries; a subsequent theme selection/application allows one new attempt. Repeated failures log one warning until a successful exchange resets that warning state. Startup, exchanges and cleanup stay off Swing's event thread.
+A forcibly terminated helper cannot be guaranteed to run its restoration block; the normal Light/EOF cleanup and actual helper lifecycle are tested, but arbitrary OS-level process termination is not.
 Windows 10 follows the unsupported-build path and retains its ordinary native title bars.
 The recorded native validation was on Windows 11 build 26100; Windows 10 was not separately checked visually.
 

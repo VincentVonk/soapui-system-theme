@@ -3,6 +3,10 @@
 
 param([Parameter(Mandatory=$true)][string]$SoapUiHome)
 $ErrorActionPreference = 'Stop'
+$pluginSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'src/main/java/soapui/systemtheme/SystemThemePlugin.java') -Raw
+$versionMatch = [regex]::Match($pluginSource, '\bVERSION\s*=\s*"(\d+\.\d+\.\d+)"')
+if (-not $versionMatch.Success) { throw 'Cannot read the central plugin VERSION.' }
+$version = $versionMatch.Groups[1].Value
 $base = $PSScriptRoot
 $uiHome = Join-Path $base 'build\ui-home'
 $plugins = Join-Path $uiHome '.soapuios\plugins'
@@ -15,7 +19,7 @@ $previousPatchJar = Join-Path $plugins 'soapui-system-theme-0.3.0.jar'
 if (Test-Path -LiteralPath $previousPatchJar) { Remove-Item -LiteralPath $previousPatchJar }
 $previousReleaseJar = Join-Path $plugins 'soapui-system-theme-0.3.1.jar'
 if (Test-Path -LiteralPath $previousReleaseJar) { Remove-Item -LiteralPath $previousReleaseJar }
-Copy-Item -LiteralPath (Join-Path $base 'dist\soapui-system-theme-0.3.2.jar') -Destination (Join-Path $plugins 'soapui-system-theme-0.3.2.jar') -Force
+Copy-Item -LiteralPath (Join-Path $base "dist\soapui-system-theme-$version.jar") -Destination (Join-Path $plugins "soapui-system-theme-$version.jar") -Force
 'mode=LIGHT' | Set-Content -LiteralPath (Join-Path $uiHome '.soapuios\system-theme.properties')
 $cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')
 $nativeOptions = @()

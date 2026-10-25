@@ -27,16 +27,22 @@ $output = Join-Path $releaseDirectory 'SoapUI-System-Theme.zip'
 if (Test-Path -LiteralPath $output -PathType Leaf) { Remove-Item -LiteralPath $output }
 
 $pluginSource = Get-Content -LiteralPath (Join-Path $root 'src/main/java/soapui/systemtheme/SystemThemePlugin.java') -Raw
-$versionMatch = [regex]::Match($pluginSource, '\bversion\s*=\s*"(\d+\.\d+\.\d+)"')
+$versionMatch = [regex]::Match($pluginSource, '\bVERSION\s*=\s*"(\d+\.\d+\.\d+)"')
 if (-not $versionMatch.Success) { throw 'Cannot read the version from SystemThemePlugin.java.' }
+if ($pluginSource -notmatch '\bversion\s*=\s*SystemThemePlugin\.VERSION') { throw 'Plugin annotation must use the central VERSION.' }
 $pluginVersion = $versionMatch.Groups[1].Value
 if ($Version -and $Version -cne $pluginVersion) { throw "Requested version $Version differs from plugin version $pluginVersion." }
 $Version = $pluginVersion
 $jarName = "soapui-system-theme-$Version.jar"
+$noticeSource = Get-Content -LiteralPath (Join-Path $root 'THIRD_PARTY_NOTICES.md') -Raw
+$noticeVersions = @([regex]::Matches($noticeSource, 'SoapUI System Theme (\d+\.\d+\.\d+)\b'))
+if ($noticeVersions.Count -ne 1 -or $noticeVersions[0].Groups[1].Value -cne $Version) { throw 'Version mismatch in THIRD_PARTY_NOTICES.md.' }
 foreach ($script in 'build.ps1','Install.ps1','Uninstall.ps1','test-ui.ps1') {
     $content = Get-Content -LiteralPath (Join-Path $root $script) -Raw
     $names = @([regex]::Matches($content, 'soapui-system-theme-\d+\.\d+\.\d+\.jar') | ForEach-Object { $_.Value })
-    if ($names -cnotcontains $jarName) { throw "$script does not reference $jarName." }
+    if ($content -notmatch 'soapui-system-theme-\$version\.jar') { throw "$script does not reference the central versioned JAR." }
+    $versionSource = if ($script -in @('Install.ps1','Uninstall.ps1')) { 'THIRD_PARTY_NOTICES.md' } else { 'SystemThemePlugin.java' }
+    if (-not $content.Contains($versionSource)) { throw "$script does not read its required version source." }
     # test-ui.ps1 also removes known older versions from its isolated test profile.
     if ($script -ne 'test-ui.ps1' -and @($names | Where-Object { $_ -cne $jarName }).Count -gt 0) {
         throw "Version mismatch in $script. Expected $jarName."
@@ -46,7 +52,7 @@ $versionChecks = @{
     'README.md' = "(?m)^# SoapUI System Theme $([regex]::Escape($Version))\r?$"
     'CHANGELOG.md' = "(?m)^## $([regex]::Escape($Version)) - "
     'THIRD_PARTY_NOTICES.md' = "SoapUI System Theme $([regex]::Escape($Version))\b"
-    'src/main/java/soapui/systemtheme/ThemeController.java' = "System Theme $([regex]::Escape($Version)) started"
+    'src/main/java/soapui/systemtheme/ThemeController.java' = 'System Theme " \+ SystemThemePlugin\.VERSION \+ " started'
 }
 foreach ($file in $versionChecks.Keys) {
     if ((Get-Content -LiteralPath (Join-Path $root $file) -Raw) -notmatch $versionChecks[$file]) {
@@ -73,6 +79,11 @@ if (-not (Test-Path -LiteralPath $jarPath -PathType Leaf)) { throw "Build did no
 # Verify the JAR contains project classes and the current notices, without host libraries.
 $jarArchive = [IO.Compression.ZipFile]::OpenRead($jarPath)
 try {
+    $binaryVersion = $jarArchive.GetEntry('META-INF/soapui-system-theme.version')
+    if (-not $binaryVersion) { throw 'JAR is missing its embedded version.' }
+    $versionReader = New-Object IO.StreamReader($binaryVersion.Open())
+    try { $builtVersion = $versionReader.ReadToEnd().Trim() } finally { $versionReader.Dispose() }
+    if ($builtVersion -cne $Version) { throw 'JAR version differs from the central VERSION.' }
     if (-not $jarArchive.GetEntry('soapui/systemtheme/SystemThemePlugin.class')) { throw 'Plugin entry point is missing from the JAR.' }
     foreach ($entry in $jarArchive.Entries) {
         if ($entry.FullName.EndsWith('.class') -and -not $entry.FullName.StartsWith('soapui/systemtheme/')) {

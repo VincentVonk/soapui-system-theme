@@ -10,19 +10,19 @@ The checked-in version is **0.3.2**. The examples below prepare that version loc
 GitHub already has a published `v0.3.2` release: local preparation does not authorize replacing its asset or moving its tag.
 For a future public release, choose a new version and update the references together in a separate source change.
 
-`release.ps1` reads the version from `src/main/java/soapui/systemtheme/SystemThemePlugin.java`.
+`release.ps1` reads the central `VERSION` constant from `src/main/java/soapui/systemtheme/SystemThemePlugin.java`. The plugin annotation must reference that constant.
 Its optional `-Version` parameter is an assertion, rather than a version-bump operation.
 Before building, it checks:
 
 | Checked item | Required relationship |
 | --- | --- |
-| Plugin annotation | A three-part numeric version, currently `0.3.2`. |
-| `build.ps1`, `Install.ps1`, `Uninstall.ps1` | The matching `soapui-system-theme-0.3.2.jar` reference, without a different versioned JAR reference. |
-| `test-ui.ps1` | The current JAR reference; older JAR names are also allowed for isolated-profile cleanup. |
+| Central constant and annotation | `VERSION` contains a three-part numeric version, currently `0.3.2`; the annotation uses `SystemThemePlugin.VERSION`. |
+| Build and installation scripts | Use `soapui-system-theme-$version.jar`, read their required version source and contain no conflicting hardcoded JAR version. Build reads the source constant; standalone installation/removal reads the packaged notices. |
+| `test-ui.ps1` | Reads the source constant for the current JAR; older JAR names are allowed for isolated-profile cleanup. |
 | `README.md` | The exact versioned top-level heading shown below. |
 | `CHANGELOG.md` | A matching `## 0.3.2 - ...` version entry. |
-| `THIRD_PARTY_NOTICES.md` | A matching `SoapUI System Theme 0.3.2` reference. |
-| `ThemeController.java` | A matching version in its startup message. |
+| `THIRD_PARTY_NOTICES.md` | Exactly one project-version reference, matching `SoapUI System Theme 0.3.2`. |
+| `ThemeController.java` | Uses the central constant in its startup message. |
 
 The required README heading is:
 
@@ -34,8 +34,8 @@ The required README heading is:
 The README therefore retains the version in its H1. A future change to this rule requires a separately reviewed script change;
 do not remove the heading, hide a substitute heading or weaken the check during a documentation edit.
 
-For a future version, also review the About/startup strings in `ThemeController.java`, the message in `Uninstall.ps1`,
-README installation/examples and the remaining documentation references. The automatic checks do not cover every occurrence of a version string.
+For a future version, update `SystemThemePlugin.VERSION` and the checked documentation/notices together. Also review
+README installation/examples and the remaining documentation references. Runtime and script messages derive their version from the central or packaged source. The automatic checks do not cover every occurrence of a version string.
 Keep the Java namespace `soapui.systemtheme` and the published plugin ID stable unless a separately reviewed change requires otherwise.
 
 ## 2. Prepare and validate the binary ZIP
@@ -61,6 +61,7 @@ The build cleans compiled classes and copied resources before compiling.
 The release script then verifies:
 
 - The expected plugin entry point exists in the JAR and implementation classes are inside `soapui/systemtheme/`.
+- `META-INF/soapui-system-theme.version` matches the source constant. The real loader test also checks the annotation against the constant and embedded version.
 - `LICENSE`, `THIRD_PARTY_NOTICES.md` and every file in `licenses/` are embedded under `META-INF/` with matching SHA-256 hashes.
 - The ZIP has the expected paths and file contents, with no extra distribution files.
 
@@ -111,9 +112,9 @@ This is the existing test invocation. It applies the execution-policy option onl
 Where scripts are already permitted, `.\tests\release.Tests.ps1` can be run directly.
 These checks copy scripts/notices into a temporary fixture and substitute a synthetic build.
 They cover repeated packaging, paths, an installer/uninstaller round trip and failure guards for versions, build errors,
-missing notices and unexpected implementation classes. The fixture is removed afterward.
+missing notices, unexpected implementation classes, annotation/notice drift and an incorrect embedded binary version. The fixture is removed afterward.
 
-The recorded result is 24 checks. They validate packaging behavior, not Java functionality, native Windows styling or live GitHub publication.
+The 25 October reliability run passed 48 checks. They validate packaging behavior, not Java functionality, native Windows styling or live GitHub publication.
 They do not replace the real full build/tests run by `release.ps1`.
 
 ## 5. Review the tested artifact

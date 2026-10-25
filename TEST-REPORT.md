@@ -107,3 +107,45 @@ The Windows/SoapUI 5.10.0 full build passed all 435 explicit checks plus the con
 Compared with the previous source revision, production Java changes consist only of the package declarations and an explanatory compatibility comment. The embedded helper content is identical. The clean JAR contains the new class/resource paths with no old namespace entries. Newly generated dark/light desktop screenshots were visually checked. Copyright notices, GitHub URLs, settings and functionality are unchanged.
 
 Only build.ps1 was used for the real build; release.ps1 was exercised solely in the temporary synthetic packaging fixture. No version bump, real release ZIP regeneration, installation into the user's plugin directory, commit, push, tag or GitHub release was performed. The existing releases/SoapUI-System-Theme.zip was checked by SHA-256 and remains unchanged.
+
+
+## Reliability validation - 25 October 2026 (0.3.2 source)
+
+This records local source validation; it does not announce a new release or update the existing published asset.
+The environment remains Windows 11 build 26100, SoapUI Open Source 5.10.0 with bundled OpenJDK 17.0.12,
+compiled using the installed JDK 27.0.1.0.2 with `--release 17`. The installation directory retains the name
+`C:\Program Files\SmartBear\SoapUI-5.9.1` but contains `bin/soapui-5.10.0.jar`.
+
+### Findings and changes checked
+
+- Confirmed against the installed host bytecode that SoapUI retains its original menu bar and `MenuBuilderHelper.getMenu()` searches that bar. The desktop test temporarily reproduces the old menu-transfer algorithm and calls the actual host menu-update method. It produces a `NullPointerException`; the original menus are immediately restored in `finally`. This demonstrates the plugin-induced failure path, without claiming every project-import exception has that cause.
+- The replacement uses a paint-only surface, preserving the original bar, menu objects, File-menu accelerators and mouse targets. With Dark active, the real desktop imports a synthetic saved project, selects projects/suites/cases, rebuilds dynamic menus and invokes Open Editor where available. Editors are opened/closed repeatedly. The real Groovy editor retains its document, unsaved synthetic text and selection through three additional Light/Dark cycles; no script is executed.
+- Deliberately failing Swing property restoration confirms that other components and the original look-and-feel still restore. The failed component's original snapshot survives and a subsequent Light request succeeds. A separate injected failure while applying Dark also rolls back to the original properties.
+- Isolated native-session tests cover startup failure, failed exchange cleanup, explicit retry with a fresh session, unsupported environments, suppressed window-event retries and application closure during helper startup. The real native tests still exercise DWM read-back, three cycles, new dialogs, EOF restoration and helper shutdown.
+- Controller tests confirm no queries in saved manual mode, a fresh background query upon selecting Follow Windows, rejection of an in-flight result after selecting manual Light, restored polling after manual Dark, and no continued queries after closure.
+- Plugin-loader checks compare the actual annotation and embedded binary version with `SystemThemePlugin.VERSION`. Standalone packaging tests install and uninstall from an extracted ZIP that contains no source checkout.
+
+### Executed checks
+
+- Full `build.ps1` with tests enabled: passed, including real JavaFX pages, real packaged-plugin discovery and the expanded SoapUI desktop scenario.
+- 435 existing explicit component/legacy/control/dialog/readability/web/native checks plus 19 new failure/retry checks: **454 explicit checks**, alongside the expanded asynchronous controller, loader and desktop scenarios.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\release.Tests.ps1`: **48 packaging/installer checks passed**, using a temporary synthetic build fixture. Guards cover the original ZIP paths/content and notices, failed builds, foreign classes, requested/script/document/annotation/notice version drift, and missing/incorrect embedded binary versions. This does not substitute for the actual full Java build.
+- `git diff --check`: passed.
+- Inspected the generated full-desktop Dark and restored Light views, including the original menubar and project overview. Native title-bar verification uses compositor captures rather than the simulated frame drawn by Swing `printAll`.
+
+The new test fixtures intentionally produce warning messages for simulated native failures and unreadable OS preferences.
+An intermediate recovery fixture initially targeted a color that the test label did not receive; its fault trigger was corrected.
+An intermediate desktop screenshot was captured in the same EDT callback that created new components, before the controller's queued styling batch; the capture now follows that batch in a separate callback. Visual review also caught a compositor capture that showed the foreground editor instead of the test window. Native captures now wait for both SoapUI's native icon and the expected menu surface before accepting a caption pixel; unrelated foreground content is not accepted as evidence. One subsequent run was correctly rejected because the expected frame was absent from the capture; a separate desktop rerun passed. These compositor checks require an unobscured interactive test window. The final complete run passes with the functional and visual assertions enabled.
+
+### Evidence and remaining limits
+
+Generated evidence is under ignored `build/`: `reliability-build.log`, `reliability-packaging.log`,
+`full-ui/soapui-dark.png`, `full-ui/soapui-restored.png`, `full-ui/soapui-native-dark.png`,
+`full-ui/soapui-native-after-dialogs-dark.png`, `full-ui/soapui-native-restored.png` and the existing component/web/native test images.
+The real desktop uses `build/ui-home`; component/controller tests use `build/test-home` or their explicit test directory.
+No real user project, request, credential, theme preference or installation profile is used or modified.
+
+Windows 10, later SoapUI versions, ReadyAPI and arbitrary third-party plugins were not newly validated.
+The synthetic import does not prove compatibility with every external project, WSDL or authentication flow.
+A forcibly terminated native helper cannot be guaranteed to execute its own restoration block; arbitrary OS-level process termination was not tested.
+No real `release.ps1` preparation, new distribution ZIP, commit/push/tag or remote publication was performed during this task.

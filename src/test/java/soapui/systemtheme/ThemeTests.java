@@ -82,7 +82,7 @@ public final class ThemeTests {
         String text = editor.getText(); int dot = editor.getCaret().getDot(), mark = editor.getCaret().getMark();
         for (int cycle = 0; cycle < 4; cycle++) {
             engine.setDark(true, fixture);
-            check(fixture.getJMenuBar() != paintedWhiteBar, "hardcoded-white menu bar replaced");
+            check(fixture.getJMenuBar() == paintedWhiteBar, "original menu bar retained in dark");
             check(fixture.getJMenuBar().getMenu(0).getItem(0) == action, "existing menu action retained");
             check(engine.isDark(), "engine dark state");
             check(editor.getBackground().equals(ThemeEngine.INPUT), "XML editor dark background");

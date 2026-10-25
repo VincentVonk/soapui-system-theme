@@ -76,8 +76,61 @@ public final class ControllerTests {
                     + "; text=[" + editor.getText() + "]");
             item(1).doClick(); frame.dispose();
         });
+        pollingIsolation(directory);
+        System.out.println("PASS: polling suspended in manual modes, immediate fresh SYSTEM read, stale result rejection and shutdown");
         System.out.println("PASS: asynchronous light/dark/light switching, read failure, new components, menu overrides, preference persistence and unchanged document");
     }
+    private static void pollingIsolation(Path directory) throws Exception {
+        Path settings = directory.resolve("poll-generation.properties");
+        Files.writeString(settings, "mode=LIGHT\n");
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.CountDownLatch blocked = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch returned = new java.util.concurrent.CountDownLatch(1);
+        SwingUtilities.invokeAndWait(() -> {
+            frame = new JFrame("Polling isolation");
+            frame.setFocusableWindowState(false); frame.setAutoRequestFocus(false);
+            frame.setLocation(-10000,-10000); frame.setSize(300,120);
+            JMenuBar bar = new JMenuBar(); bar.add(new JMenu("File")); frame.setJMenuBar(bar);
+            editor = new RSyntaxTextArea(); frame.add(editor); frame.setVisible(true);
+            new ThemeController(frame, () -> {
+                int call = reads.incrementAndGet();
+                if (call == 1) {
+                    blocked.countDown();
+                    if (!release.await(3, java.util.concurrent.TimeUnit.SECONDS)) throw new AssertionError("Test reader timed out");
+                    returned.countDown();
+                    return Optional.of(true);
+                }
+                return Optional.of(false);
+            }, settings, 100).start();
+        });
+        try {
+            Thread.sleep(250);
+            if (reads.get() != 0) throw new AssertionError("Saved manual mode queried Windows");
+            SwingUtilities.invokeAndWait(() -> item(0).doClick());
+            if (!blocked.await(2, java.util.concurrent.TimeUnit.SECONDS)) throw new AssertionError("SYSTEM did not query immediately");
+            SwingUtilities.invokeAndWait(() -> item(1).doClick());
+            release.countDown();
+            if (!returned.await(2, java.util.concurrent.TimeUnit.SECONDS)) throw new AssertionError("Reader did not return");
+            Thread.sleep(250);
+            SwingUtilities.invokeAndWait(() -> {
+                if (editor.getBackground().equals(ThemeEngine.INPUT)) throw new AssertionError("Stale SYSTEM result overrode manual Light");
+            });
+            if (reads.get() != 1) throw new AssertionError("Manual mode kept polling");
+            SwingUtilities.invokeAndWait(() -> item(2).doClick());
+            waitFor(() -> editor.getBackground().equals(ThemeEngine.INPUT), "manual dark before fresh SYSTEM read");
+            if (reads.get() != 1) throw new AssertionError("Manual Dark queried Windows");
+            SwingUtilities.invokeAndWait(() -> item(0).doClick());
+            waitFor(() -> !editor.getBackground().equals(ThemeEngine.INPUT), "fresh SYSTEM value after manual mode");
+        } finally {
+            release.countDown();
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
+        Thread.sleep(150);
+        int stopped = reads.get(); Thread.sleep(250);
+        if (reads.get() != stopped) throw new AssertionError("Polling continued after close");
+    }
+
     private static void waitFor(BooleanSupplier condition, String description) throws Exception {
         long deadline = System.nanoTime() + 4_000_000_000L;
         while (System.nanoTime() < deadline) {

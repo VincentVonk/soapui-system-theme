@@ -75,6 +75,7 @@ Use the **Theme** menu:
 | Light (SoapUI default) | Restores the original light appearance and ignores the Windows theme. |
 | Dark | Keeps supported components dark, regardless of the Windows theme. |
 
+Manual Light/Dark modes pause Windows theme checks; returning to Follow Windows requests a fresh reading.
 Your choice is saved across restarts in `%USERPROFILE%\.soapuios\system-theme.properties`.
 An existing Windows theme scheduler controls switching times; the plugin does not create a schedule.
 If Windows' preference is temporarily unreadable, the current appearance is retained while the plugin retries.

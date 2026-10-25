@@ -18,26 +18,43 @@ final class WindowsTitleBar implements AutoCloseable {
         Thread t = new Thread(r, "soapui-titlebar"); t.setDaemon(true); return t;
     });
     private ScheduledFuture<?> pending;
-    private NativeBridge bridge;
+    interface Session extends AutoCloseable {
+        boolean supported();
+        String exchange(String command) throws IOException;
+        @Override void close();
+    }
+    @FunctionalInterface interface BridgeFactory { Session open() throws IOException; }
+    private final BridgeFactory factory;
+    private Session bridge;
     private boolean dark, closed;
-    private volatile boolean unavailable;
+    private volatile boolean unsupported, retryBlocked;
+    private boolean warned;
+
+    WindowsTitleBar() { this(NativeBridge::new); }
+    WindowsTitleBar(BridgeFactory factory) { this.factory = factory; }
 
     synchronized void setDark(boolean value) {
-        if (closed || unavailable || !System.getProperty("os.name", "").startsWith("Windows")) return;
+        if (closed || unsupported || !System.getProperty("os.name", "").startsWith("Windows")) return;
         dark = value;
+        retryBlocked = false;
         if (pending != null) pending.cancel(false);
         pending = worker.schedule(this::apply, 100, TimeUnit.MILLISECONDS);
     }
-    synchronized void refresh() { if (dark) setDark(true); }
+    synchronized void refresh() {
+        if (dark && !closed && !unsupported && !retryBlocked) {
+            if (pending != null) pending.cancel(false);
+            pending = worker.schedule(this::apply, 100, TimeUnit.MILLISECONDS);
+        }
+    }
 
     private void apply() {
         boolean value;
-        synchronized (this) { if (closed || unavailable) return; value = dark; }
+        synchronized (this) { if (closed || unsupported || retryBlocked) return; value = dark; }
         try {
             if (bridge == null) {
                 if (!value) return;
-                bridge = new NativeBridge();
-                if (!bridge.supported) { bridge.close(); bridge = null; unavailable = true; return; }
+                bridge = factory.open();
+                if (!bridge.supported()) { bridge.close(); bridge = null; unsupported = true; return; }
             }
             // Startup can take a moment; honor any more recent menu selection.
             synchronized (this) { if (closed) return; value = dark; }
@@ -46,11 +63,13 @@ final class WindowsTitleBar implements AutoCloseable {
             // Dialogs can close between EnumWindows and a DWM call. An unsupported
             // or disappearing window must not disable styling of the main frame.
             if (!response.endsWith("|0")) LOG.fine("Some native windows could not be updated: " + response);
+            warned = false;
             if (!value) { bridge.close(); bridge = null; }
         } catch (Exception e) {
             // Failure of optional native styling must never undo the working Swing theme.
-            LOG.log(Level.WARNING, "Native title-bar styling unavailable; keeping the ordinary Windows frame", e);
-            unavailable = true;
+            if (!warned) LOG.log(Level.WARNING, "Native title-bar styling failed; retry on the next theme selection", e);
+            warned = true;
+            retryBlocked = true;
             if (bridge != null) { bridge.close(); bridge = null; }
         }
     }
@@ -63,7 +82,7 @@ final class WindowsTitleBar implements AutoCloseable {
     }
 
     /** Private stdin/stdout protocol; the helper can only style this JVM's AWT windows. */
-    static final class NativeBridge implements AutoCloseable {
+    static final class NativeBridge implements Session {
         private static final ScheduledExecutorService TIMEOUTS = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "soapui-titlebar-timeout"); t.setDaemon(true); return t;
         });
@@ -86,10 +105,15 @@ final class WindowsTitleBar implements AutoCloseable {
                 "-NoLogo", "-NoProfile", "-NonInteractive", "-OutputFormat", "Text", "-EncodedCommand", encoded).redirectErrorStream(true).start();
             input = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
             output = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
-            try { supported = readResponse().equals("READY"); }
-            catch (IOException e) { process.destroyForcibly(); throw e; }
+            try {
+                String greeting = readResponse();
+                if (!greeting.equals("READY") && !greeting.equals("UNSUPPORTED"))
+                    throw new IOException("Unexpected native startup response: " + greeting);
+                supported = greeting.equals("READY");
+            } catch (IOException e) { close(); throw e; }
         }
-        String exchange(String command) throws IOException {
+        @Override public boolean supported() { return supported; }
+        @Override public String exchange(String command) throws IOException {
             output.write(command); output.newLine(); output.flush();
             return readResponse();
         }

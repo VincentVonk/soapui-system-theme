@@ -33,8 +33,9 @@ try {
         Copy-Item -LiteralPath (Join-Path $root "src/main/java/soapui/systemtheme/$file") -Destination $sourceDirectory
     }
     $pluginSource = Get-Content -LiteralPath (Join-Path $sourceDirectory 'SystemThemePlugin.java') -Raw
-    $version = [regex]::Match($pluginSource, '\bversion\s*=\s*"(\d+\.\d+\.\d+)"').Groups[1].Value
+    $version = [regex]::Match($pluginSource, '\bVERSION\s*=\s*"(\d+\.\d+\.\d+)"').Groups[1].Value
     $jarName = "soapui-system-theme-$version.jar"
+    $versionedReference = 'soapui-system-theme-$version.jar'
     $fakeBuild = @'
 param([string]$SoapUiHome, [string]$JdkHome)
 $ErrorActionPreference = 'Stop'
@@ -44,6 +45,9 @@ New-Item -ItemType Directory -Path (Join-Path $payload 'soapui/systemtheme'),(Jo
 Set-Content -LiteralPath (Join-Path $payload 'soapui/systemtheme/SystemThemePlugin.class') -Value 'Synthetic test entry point; not executable Java.'
 foreach ($file in 'LICENSE','THIRD_PARTY_NOTICES.md') { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $payload 'META-INF') -Force }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'licenses') -Destination (Join-Path $payload 'META-INF') -Recurse -Force
+Set-Content -LiteralPath (Join-Path $payload 'META-INF/soapui-system-theme.version') -Value '__VERSION__'
+if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'omit-version')) { Remove-Item -LiteralPath (Join-Path $payload 'META-INF/soapui-system-theme.version') }
+if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'wrong-version')) { Set-Content -LiteralPath (Join-Path $payload 'META-INF/soapui-system-theme.version') -Value '999.0.0' }
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'omit-notice')) { Remove-Item -LiteralPath (Join-Path $payload 'META-INF/LICENSE') }
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'foreign-class')) { Set-Content -LiteralPath (Join-Path $payload 'Foreign.class') -Value 'Must not ship' }
 $target = Join-Path $PSScriptRoot 'dist/__JAR__'
@@ -56,7 +60,7 @@ try {
     }
 } finally { $archive.Dispose() }
 '@
-    Set-Content -LiteralPath (Join-Path $fixture 'build.ps1') -Value $fakeBuild.Replace('__JAR__',$jarName)
+    Set-Content -LiteralPath (Join-Path $fixture 'build.ps1') -Value ($fakeBuild.Replace('__JAR__',$jarName).Replace('__VERSION__',$version) + "`n# Reads SystemThemePlugin.java; soapui-system-theme-`$version.jar")
     $releaseScript = Join-Path $fixture 'release.ps1'
     $zipPath = Join-Path $fixture 'releases/SoapUI-System-Theme.zip'
     & $releaseScript -Version $version
@@ -85,13 +89,41 @@ try {
 
     $installPath = Join-Path $fixture 'Install.ps1'
     $installSource = Get-Content -LiteralPath $installPath -Raw
-    Set-Content -LiteralPath $installPath -Value $installSource.Replace($jarName,'soapui-system-theme-999.0.0.jar')
+    Set-Content -LiteralPath $installPath -Value $installSource.Replace($versionedReference,'soapui-system-theme-999.0.0.jar')
     Assert-Failure { & $releaseScript } 'Install.ps1 does not reference'
+    Set-Content -LiteralPath $installPath -Value $installSource
+
+    $entryPath = Join-Path $sourceDirectory 'SystemThemePlugin.java'
+    $entrySource = Get-Content -LiteralPath $entryPath -Raw
+    Set-Content -LiteralPath $entryPath -Value $entrySource.Replace('version = SystemThemePlugin.VERSION','version = "999.0.0"')
+    Assert-Failure { & $releaseScript } 'annotation must use the central VERSION'
+    Set-Content -LiteralPath $entryPath -Value $entrySource
+    $noticePath = Join-Path $fixture 'THIRD_PARTY_NOTICES.md'
+    $noticeSource = Get-Content -LiteralPath $noticePath -Raw
+    Set-Content -LiteralPath $noticePath -Value $noticeSource.Replace("SoapUI System Theme $version",'SoapUI System Theme 999.0.0')
+    Assert-Failure { & $releaseScript } 'Version mismatch in THIRD_PARTY_NOTICES'
+    Set-Content -LiteralPath $noticePath -Value $noticeSource
+
+    foreach ($case in @(
+        @{ File = 'README.md'; Old = "# SoapUI System Theme $version"; New = '# SoapUI System Theme 999.0.0'; Error = 'Version mismatch in README' },
+        @{ File = 'CHANGELOG.md'; Old = "## $version - "; New = '## 999.0.0 - '; Error = 'Version mismatch in CHANGELOG' },
+        @{ File = 'src/main/java/soapui/systemtheme/ThemeController.java'; Old = 'System Theme " + SystemThemePlugin.VERSION + " started'; New = 'System Theme 999.0.0 started'; Error = 'Version mismatch in src/main' }
+    )) {
+        $path = Join-Path $fixture $case.File
+        $original = Get-Content -LiteralPath $path -Raw
+        Set-Content -LiteralPath $path -Value $original.Replace($case.Old,$case.New)
+        Assert-Failure { & $releaseScript } $case.Error
+        Set-Content -LiteralPath $path -Value $original
+    }
+    Set-Content -LiteralPath $installPath -Value ($installSource + "`n# soapui-system-theme-999.0.0.jar")
+    Assert-Failure { & $releaseScript } 'Version mismatch in Install'
     Set-Content -LiteralPath $installPath -Value $installSource
 
     foreach ($case in @(
         @{ Marker = 'fail-build'; Error = 'Synthetic build failure' },
         @{ Marker = 'omit-notice'; Error = 'JAR is missing META-INF/LICENSE' },
+        @{ Marker = 'omit-version'; Error = 'JAR is missing its embedded version' },
+        @{ Marker = 'wrong-version'; Error = 'JAR version differs' },
         @{ Marker = 'foreign-class'; Error = 'Unexpected implementation class' }
     )) {
         $marker = Join-Path $fixture $case.Marker

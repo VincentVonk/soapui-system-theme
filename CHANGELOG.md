@@ -16,6 +16,17 @@
 - Update build/test entry points, resource paths and release-package validation to the new namespace.
 - Retain version 0.3.2, the published plugin identity and existing behavior. No new release is created by this source cleanup.
 
+### Source reliability improvements (25 October 2026)
+
+- Preserve SoapUI's original menu bar and menus with a paint-only dark surface, keeping dynamic menu updates and project import working in Dark.
+- Retry incomplete Light restoration without losing original snapshots; continue independent restoration steps after a failure.
+- Retry transient native-helper failures on a later theme selection, while avoiding automatic retries for window events and unsupported environments.
+- Pause Windows theme queries in manual modes and reject results from an earlier mode selection.
+- Use a central source version constant and verify matching binary metadata; standalone installers retain the existing ZIP layout.
+- Extend isolated regressions for actual SoapUI import, selection, menu actions, editor preservation, failed restoration and helper recovery.
+
+These are source changes within 0.3.2; no new release is published by this change.
+
 ## 0.3.1 - 2026-10-21
 
 - Dark minimize, maximize, restore and close icons for internal windows.

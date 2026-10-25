@@ -50,7 +50,9 @@ final class ThemeController {
     });
     private Mode mode = Mode.SYSTEM;
     private Boolean windowsDark;
-    private boolean closed;
+    private volatile boolean closed;
+    private volatile long pollGeneration;
+    private java.util.concurrent.ScheduledFuture<?> polling;
     private boolean warned;
     private final java.util.Set<Component> pending = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     private boolean patchQueued;
@@ -75,8 +77,8 @@ final class ThemeController {
         });
         frame.revalidate();
         applyMode();
-        worker.scheduleWithFixedDelay(this::poll, 0, pollMillis, TimeUnit.MILLISECONDS);
-        LOG.info("System Theme 0.3.2 started; mode=" + mode + "; checks Windows app mode every 3 seconds");
+        updatePolling();
+        LOG.info("System Theme " + SystemThemePlugin.VERSION + " started; mode=" + mode + "; checks Windows app mode every 3 seconds in Follow Windows");
     }
 
     private JMenu buildMenu() {
@@ -85,12 +87,16 @@ final class ThemeController {
         for (Mode value : Mode.values()) {
             String label = value == Mode.SYSTEM ? "Follow Windows" : value == Mode.LIGHT ? "Light (SoapUI default)" : "Dark";
             JRadioButtonMenuItem item = new JRadioButtonMenuItem(label, mode == value);
-            item.addActionListener(e -> { mode = value; saveMode(); applyMode(); });
+            item.addActionListener(e -> {
+                mode = value; saveMode(); updatePolling();
+                // Retain the current appearance until a fresh Windows reading is available.
+                if (mode != Mode.SYSTEM) applyMode();
+            });
             buttons.put(value, item); group.add(item); menu.add(item);
         }
         menu.addSeparator();
         menu.add("About System Theme").addActionListener(e -> JOptionPane.showMessageDialog(frame,
-            "System Theme 0.3.2 for SoapUI Open Source 5.10.0\n\n"
+            "System Theme " + SystemThemePlugin.VERSION + " for SoapUI Open Source 5.10.0\n\n"
             + "Follow Windows reads the Windows app mode every 3 seconds.\n"
             + "Your Windows scheduler controls the switch time.\n"
             + "Light restores the original SoapUI look and component colours.\n\n"
@@ -102,20 +108,29 @@ final class ThemeController {
         return menu;
     }
 
-    private void poll() {
+    private void updatePolling() {
+        long generation = ++pollGeneration;
+        if (polling != null) { polling.cancel(false); polling = null; }
+        if (!closed && mode == Mode.SYSTEM)
+            polling = worker.scheduleWithFixedDelay(() -> poll(generation), 0, pollMillis, TimeUnit.MILLISECONDS);
+    }
+
+    private void poll(long generation) {
+        if (closed || generation != pollGeneration) return;
         try {
             Optional<Boolean> value = reader.read();
+            if (closed || generation != pollGeneration) return;
             if (value.isPresent()) {
                 warned = false;
                 SwingUtilities.invokeLater(() -> {
-                    if (closed) return;
+                    if (closed || generation != pollGeneration || mode != Mode.SYSTEM) return;
                     boolean changed = windowsDark == null || !windowsDark.equals(value.get());
                     windowsDark = value.get();
-                    if (changed && mode == Mode.SYSTEM) applyMode();
+                    if (changed || engine.isDark() != value.get()) applyMode();
                 });
             } else warnOnce("Windows app-mode preference could not be read; retaining current appearance", null);
         } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        catch (Exception e) { warnOnce("Windows theme query failed; retaining current appearance", e); }
+        catch (Exception e) { if (!closed && generation == pollGeneration) warnOnce("Windows theme query failed; retaining current appearance", e); }
     }
 
     private void warnOnce(String message, Exception cause) {
@@ -127,8 +142,9 @@ final class ThemeController {
         try { engine.setDark(dark, Window.getWindows()); titleBars.setDark(dark); }
         catch (Exception e) {
             LOG.log(Level.SEVERE, "Could not change appearance; restoring light mode", e);
-            try { engine.setDark(false, Window.getWindows()); titleBars.setDark(false); }
+            try { engine.setDark(false, Window.getWindows()); }
             catch (Exception rollback) { LOG.log(Level.SEVERE, "Appearance restoration failed", rollback); }
+            finally { titleBars.setDark(false); }
         }
     }
 
@@ -172,7 +188,7 @@ final class ThemeController {
     }
 
     private void close() {
-        closed = true; worker.shutdownNow(); pending.clear();
+        closed = true; ++pollGeneration; worker.shutdownNow(); pending.clear();
         engine.close();
         titleBars.close();
         Toolkit.getDefaultToolkit().removeAWTEventListener(uiListener);

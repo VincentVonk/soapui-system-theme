@@ -36,7 +36,7 @@ final class ThemeEngine {
     static final Color FG = new Color(0xe3e6eb), MUTED = new Color(0xa3acb9);
     static final Color LINE = new Color(0x495361), SELECT = new Color(0x345a85);
     private final Map<Component, Snapshot> originals = new WeakHashMap<>();
-    private final Map<JFrame, JMenuBar> menuBars = new WeakHashMap<>();
+    private final MenuBarTheme menuBars = new MenuBarTheme();
     private final Map<Object, Object> defaultValues = new LinkedHashMap<>();
     private final Map<String,Object> titleIconDefaults = new LinkedHashMap<>();
     private final ToolbarPaintGuard toolbarPaint = new ToolbarPaintGuard();
@@ -47,8 +47,9 @@ final class ThemeEngine {
     private MetalTheme originalMetal;
     private boolean dark;
     private boolean applying;
+    private boolean restoring;
 
-    boolean isDark() { return dark; }
+    boolean isDark() { return dark && !restoring; }
     boolean isApplying() { return applying; }
     void close() { if (webTheme != null) webTheme.setDark(false); }
     private static void edt() {
@@ -57,10 +58,11 @@ final class ThemeEngine {
 
     void setDark(boolean value, Component... roots) throws UnsupportedLookAndFeelException {
         edt();
-        if (dark == value) return;
+        if (dark == value && !restoring) return;
         applying = true;
         try {
             if (value) {
+                if (restoring) restoreLight(roots);
                 originalLaf = UIManager.getLookAndFeel();
                 originalPlastic = PlasticLookAndFeel.getPlasticTheme();
                 originalMetal = MetalLookAndFeel.getCurrentTheme();
@@ -82,27 +84,7 @@ final class ThemeEngine {
                     patchTree(root);
                 }
             } else {
-                dark = false;
-                if (webTheme != null) webTheme.setDark(false);
-                aboutPanes.restore();
-                toolbarPaint.restore();
-                restoreMenuBars();
-                PlasticLookAndFeel.setPlasticTheme(originalPlastic);
-                MetalLookAndFeel.setCurrentTheme(originalMetal);
-                if (originalLaf != null) UIManager.setLookAndFeel(originalLaf);
-                titleIconDefaults.forEach(UIManager::put);titleIconDefaults.clear();
-                defaultValues.forEach(UIManager::put);
-                defaultValues.clear();
-                for (Component root : roots) if (root != null) SwingUtilities.updateComponentTreeUI(root);
-                for (Map.Entry<Component, Snapshot> e : new ArrayList<>(originals.entrySet()))
-                    if (e.getKey() != null) e.getValue().restore(e.getKey());
-                // Renderer colours are cached by DefaultTableCellRenderer. Restore these last,
-                // after component snapshots, so a nightly renderer cannot leave a dark cache behind.
-                for (Map.Entry<Component, Snapshot> e : new ArrayList<>(originals.entrySet()))
-                    if (e.getKey() instanceof JTable && e.getValue().table != null)
-                        e.getValue().table.restore((JTable) e.getKey());
-                originals.clear();
-                for (Component root : roots) if (root != null) { root.invalidate(); root.validate(); root.repaint(); }
+                restoreLight(roots);
             }
         } finally { applying = false; }
     }
@@ -155,7 +137,7 @@ final class ThemeEngine {
     void patchTree(Component c) {
         edt();
         if (!dark || c == null) return;
-        if (c instanceof JFrame) replaceMenuBar((JFrame) c);
+        if (c instanceof JFrame) menuBars.install((JFrame) c);
         Snapshot snapshot = originals.get(c);
         if (snapshot == null) {
             snapshot = new Snapshot(c, true); originals.put(c, snapshot);
@@ -232,24 +214,46 @@ final class ThemeEngine {
         c.repaint();
     }
 
-    private void replaceMenuBar(JFrame frame) {
-        JMenuBar old = frame.getJMenuBar();
-        if (old == null || menuBars.containsKey(frame)) return;
-        // SoapUI's anonymous JMenuBar paintComponent always paints white. Preserve its menus and actions.
-        JMenuBar replacement = new JMenuBar();
-        replacement.setBorder(old.getBorder());
-        while (old.getComponentCount() > 0) replacement.add(old.getComponent(0));
-        menuBars.put(frame, old); frame.setJMenuBar(replacement); frame.revalidate();
+    /** Retain every snapshot until the complete restoration succeeds, so failures can be retried. */
+    private void restoreLight(Component... roots) {
+        restoring = true;
+        Restoration restore = new Restoration();
+        if (webTheme != null) restore.attempt(() -> webTheme.setDark(false));
+        restore.attempt(aboutPanes::restore);
+        restore.attempt(toolbarPaint::restore);
+        restore.attempt(menuBars::restore);
+        restore.attempt(() -> PlasticLookAndFeel.setPlasticTheme(originalPlastic));
+        restore.attempt(() -> MetalLookAndFeel.setCurrentTheme(originalMetal));
+        if (originalLaf != null) restore.attempt(() -> UIManager.setLookAndFeel(originalLaf));
+        titleIconDefaults.forEach((key, value) -> restore.attempt(() -> UIManager.put(key, value)));
+        defaultValues.forEach((key, value) -> restore.attempt(() -> UIManager.put(key, value)));
+        for (Component root : roots) if (root != null)
+            restore.attempt(() -> SwingUtilities.updateComponentTreeUI(root));
+        for (var entry : new ArrayList<>(originals.entrySet())) if (entry.getKey() != null)
+            restore.attempt(() -> entry.getValue().restore(entry.getKey()));
+        // Renderer caches must be restored after all component snapshots.
+        for (var entry : new ArrayList<>(originals.entrySet()))
+            if (entry.getKey() instanceof JTable && entry.getValue().table != null)
+                restore.attempt(() -> entry.getValue().table.restore((JTable) entry.getKey()));
+        for (Component root : roots) if (root != null)
+            restore.attempt(() -> { root.invalidate(); root.validate(); root.repaint(); });
+        restore.finish();
+        originals.clear(); defaultValues.clear(); titleIconDefaults.clear();
+        dark = false;
+        restoring = false;
     }
 
-    private void restoreMenuBars() {
-        menuBars.forEach((frame, original) -> {
-            JMenuBar replacement = frame.getJMenuBar();
-            if (replacement != null && replacement != original)
-                while (replacement.getComponentCount() > 0) original.add(replacement.getComponent(0));
-            frame.setJMenuBar(original); frame.revalidate();
-        });
-        menuBars.clear();
+    private static final class Restoration {
+        @FunctionalInterface interface Step { void run() throws Exception; }
+        private RuntimeException failure;
+        void attempt(Step step) {
+            try { step.run(); }
+            catch (Exception e) {
+                if (failure == null) failure = new IllegalStateException("Appearance restoration incomplete; retry is available", e);
+                else failure.addSuppressed(e);
+            }
+        }
+        void finish() { if (failure != null) throw failure; }
     }
 
     private static boolean neutral(Color c) {
