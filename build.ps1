@@ -68,6 +68,8 @@ if (-not $SkipTests) {
     if (-not (Test-Path -LiteralPath $testJava)) { $testJava = $java }
     & $testJava '-Djava.awt.headless=false' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.ThemeTests (Join-Path $root 'build')
     if ($LASTEXITCODE -ne 0) { throw 'Theme tests failed.' }
+    & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.MenuHoverTests (Join-Path $root 'build\menu-hover')
+    if ($LASTEXITCODE -ne 0) { throw 'Menu hover and partial repaint tests failed.' }
     & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.LegacyPaintTests
     if ($LASTEXITCODE -ne 0) { throw 'Legacy toolbar and renderer tests failed.' }
     & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.TitleControlTests

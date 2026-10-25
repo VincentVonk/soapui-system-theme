@@ -74,7 +74,7 @@ The web test starts with page scripts disabled and executes only the bundled UI 
 skipping Google Analytics. Its HTTP/2-loader workaround is test-only; the plugin changes no network setting.
 See the [test report](../TEST-REPORT.md) for the original environment, exact checks, screenshots inspected and caveats.
 Its dated entries are historical evidence, not a claim that those checks ran during every documentation update.
-The 25 October reliability run records 454 explicit checks plus the controller/loader/desktop scenarios; the earlier 358/378 totals cover earlier scopes.
+The 25 October hover-fix run records 500 explicit checks plus the controller/loader/desktop scenarios; the earlier 358/378 totals cover earlier scopes.
 
 A useful manual acceptance check is to keep unsaved request text and a selection, let the existing Windows scheduler change
 the app theme, and open another request. Return to Light and check appearance, text and selection. Allow approximately 3–5 seconds after an OS change.
@@ -135,7 +135,7 @@ Restoration attempts independent steps even when one fails. Component snapshots 
 
 Important adaptations include:
 
-- SoapUI's main menu bar paints a fixed white background and is also retained internally by SoapUI for dynamic menu updates. `MenuBarTheme` adds a paint-only surface above that bar in the layered pane. It does not move or replace the bar, menus, actions or accelerator bindings; its hit test passes mouse events to the original controls. Bounds follow the original bar, the surface stays below popups, and Light removes it.
+- SoapUI's main menu bar paints a fixed white background and is also retained internally by SoapUI for dynamic menu updates. `MenuBarTheme` wraps that same bar in a Swing `JLayer`, which is the painting origin for both complete and incremental/hover repaints. The bar and its menus, actions and accelerator bindings retain their identities; input still reaches the original controls. A temporary root-layout adapter delegates measurement and positions the layer using the original menu bounds. Light removes the layer and restores the original root layout and menu parent. A sibling paint overlay was insufficient because direct menu repaints could bypass it.
 - Main, navigator, inspector/log and project-overview toolbars use temporary Swing `JLayer` painting guards, preserving the actual bars, controls, actions and layout. Light removes those guards.
 - Neutral dark icon pixels receive more contrast without modifying the source image. Colored status indicators retain their colors where possible.
 - Tables resist later light striping from the host; tree renderers and scrollbars are styled and restored.

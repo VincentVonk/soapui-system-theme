@@ -25,6 +25,9 @@
 - Use a central source version constant and verify matching binary metadata; standalone installers retain the existing ZIP layout.
 - Extend isolated regressions for actual SoapUI import, selection, menu actions, editor preservation, failed restoration and helper recovery.
 
+- Fix pale/white menubar backgrounds after hover or incremental repaint by routing the original bar through a Swing JLayer; preserve its identity and restore its original parent/root layout in Light.
+- Add compositor-based hover, disabled/selected menu, partial repaint and resize regressions across three theme cycles.
+
 These are source changes within 0.3.2; no new release is published by this change.
 
 ## 0.3.1 - 2026-10-21

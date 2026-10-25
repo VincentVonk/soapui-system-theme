@@ -149,3 +149,35 @@ Windows 10, later SoapUI versions, ReadyAPI and arbitrary third-party plugins we
 The synthetic import does not prove compatibility with every external project, WSDL or authentication flow.
 A forcibly terminated native helper cannot be guaranteed to execute its own restoration block; arbitrary OS-level process termination was not tested.
 No real `release.ps1` preparation, new distribution ZIP, commit/push/tag or remote publication was performed during this task.
+
+
+## Menu hover repaint regression - 25 October 2026 (0.3.2 source)
+
+The user reported pale/white menu backgrounds after hovering over File/Project/Suite/Case in Dark.
+A full-window snapshot had not exposed this: SoapUI's hardcoded white menu paint could run during an incremental
+repaint without repainting the sibling dark overlay. The original menu bar and all menu objects were still present;
+the defect was in paint routing, rather than menu lookup.
+
+`MenuHoverTests` reproduces the old behavior in an isolated visible frame using the same hardcoded-white menu paint.
+It dispatches mouse-enter/exit events and flushes queued dirty regions, then explicitly repaints the original bar.
+Before the fix, the first File hover/partial repaint produced a **97.7% bright menu area** and failed the regression.
+With the original bar inside a `JLayer` painting origin, the same partial repaints remain dark. A small synthetic
+client-color marker verifies that screen captures show the test frame before their menu pixels are evaluated.
+
+The new **46 checks** cover three Light/Dark cycles, enabled and disabled menu hover, partial repaint, an open/selected
+File menu, action execution, accelerator and menu identity, resize, and restoration of the original root layout and
+menu parent. Captures are taken from the compositor rather than forcing a complete Swing redraw for each hover.
+The original SoapUI menu reference remains intact; no menu objects or user actions are replaced.
+
+Validation for this change:
+
+- Full `build.ps1` with all tests enabled: passed, including **500 explicit checks** (454 existing plus 46 hover checks),
+  asynchronous controller tests, real plugin loading and the actual SoapUI desktop/import/menu/editor scenarios.
+- Packaging/installer regression fixture: **48 checks passed**.
+- Visually inspected the before-fix white hover bar and the fixed dark selected menu/dropdown, plus actual SoapUI Dark/Light captures.
+- `git diff --check`: passed. Version remains **0.3.2**.
+
+Generated evidence: `build/menu-before-fix.log`, `build/menu-before-fix/menu-hover-dark.png`, `build/menu-hover.log`,
+`build/menu-hover/`, `build/menu-hover-build.log`, `build/menu-hover-packaging.log` and `build/full-ui/`.
+The interactive test window must remain unobscured. Existing Windows/SoapUI compatibility limits still apply.
+No installation into the normal user profile, release preparation, commit, tag, push or publication was performed.
