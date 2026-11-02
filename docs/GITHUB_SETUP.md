@@ -1,6 +1,6 @@
 # GitHub setup and ongoing development
 
-This guide covers initial source-repository setup and ongoing development for version **0.3.2**.
+This guide covers initial source-repository setup and ongoing development for version **0.3.3**.
 For the ready-to-install binary ZIP, use the [README installation guide](../README.md#installation).
 Source archives contain tests, build scripts and notices; their files belong directly in the repository root.
 

@@ -19,6 +19,8 @@ $previousPatchJar = Join-Path $plugins 'soapui-system-theme-0.3.0.jar'
 if (Test-Path -LiteralPath $previousPatchJar) { Remove-Item -LiteralPath $previousPatchJar }
 $previousReleaseJar = Join-Path $plugins 'soapui-system-theme-0.3.1.jar'
 if (Test-Path -LiteralPath $previousReleaseJar) { Remove-Item -LiteralPath $previousReleaseJar }
+$previousSourceJar = Join-Path $plugins 'soapui-system-theme-0.3.2.jar'
+if (Test-Path -LiteralPath $previousSourceJar) { Remove-Item -LiteralPath $previousSourceJar }
 Copy-Item -LiteralPath (Join-Path $base "dist\soapui-system-theme-$version.jar") -Destination (Join-Path $plugins "soapui-system-theme-$version.jar") -Force
 'mode=LIGHT' | Set-Content -LiteralPath (Join-Path $uiHome '.soapuios\system-theme.properties')
 $cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')

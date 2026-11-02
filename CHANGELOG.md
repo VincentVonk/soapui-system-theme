@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.3 - 2026-11-02
+
+Source version prepared for manual publication; this change does not publish a release.
+
+- Include the post-0.3.2 source fixes documented below: original menu identities and dynamic updates, dark hover/partial repaint, retryable appearance restoration, native-helper recovery and suspended polling in manual modes.
+- Retain the `soapui.systemtheme` namespace, stable plugin identity and central version/binary metadata checks.
+- Update current installation, build and release documentation to the 0.3.3 JAR. Remove the preceding 0.3.2 JAR from the isolated desktop-test profile before testing 0.3.3.
+- The version bump introduces no additional runtime behavior changes.
+
 ## 0.3.2 - 2026-10-23
 
 - Make default HTML text in read-only error/details dialogs readable in dark mode, preserving message text/document identity and restoring the original display property in Light. Leave editable HTML request/response documents untouched.

@@ -1,14 +1,14 @@
 # Preparing a manual release
 
-Maintainer guide for the current **0.3.2** source tree.
+Maintainer guide for the current **0.3.3** source tree.
 See [development prerequisites and tests](DEVELOPMENT.md) before preparing an artifact.
 The current process builds locally and publishes manually through GitHub Releases; the scripts do not publish automatically.
 
 ## 1. Choose the version and source revision
 
-The checked-in version is **0.3.2**. The examples below prepare that version locally.
-GitHub already has a published `v0.3.2` release: local preparation does not authorize replacing its asset or moving its tag.
-For a future public release, choose a new version and update the references together in a separate source change.
+The checked-in version is **0.3.3**. The examples below prepare that version locally.
+The version bump does not publish a release or create a tag. Check existing tags/assets before publication; do not replace an existing asset or move an existing tag.
+For a subsequent version, update the central constant and checked references together before building.
 
 `release.ps1` reads the central `VERSION` constant from `src/main/java/soapui/systemtheme/SystemThemePlugin.java`. The plugin annotation must reference that constant.
 Its optional `-Version` parameter is an assertion, rather than a version-bump operation.
@@ -16,18 +16,18 @@ Before building, it checks:
 
 | Checked item | Required relationship |
 | --- | --- |
-| Central constant and annotation | `VERSION` contains a three-part numeric version, currently `0.3.2`; the annotation uses `SystemThemePlugin.VERSION`. |
+| Central constant and annotation | `VERSION` contains a three-part numeric version, currently `0.3.3`; the annotation uses `SystemThemePlugin.VERSION`. |
 | Build and installation scripts | Use `soapui-system-theme-$version.jar`, read their required version source and contain no conflicting hardcoded JAR version. Build reads the source constant; standalone installation/removal reads the packaged notices. |
 | `test-ui.ps1` | Reads the source constant for the current JAR; older JAR names are allowed for isolated-profile cleanup. |
 | `README.md` | The exact versioned top-level heading shown below. |
-| `CHANGELOG.md` | A matching `## 0.3.2 - ...` version entry. |
-| `THIRD_PARTY_NOTICES.md` | Exactly one project-version reference, matching `SoapUI System Theme 0.3.2`. |
+| `CHANGELOG.md` | A matching `## 0.3.3 - ...` version entry. |
+| `THIRD_PARTY_NOTICES.md` | Exactly one project-version reference, matching `SoapUI System Theme 0.3.3`. |
 | `ThemeController.java` | Uses the central constant in its startup message. |
 
 The required README heading is:
 
 ```markdown
-# SoapUI System Theme 0.3.2
+# SoapUI System Theme 0.3.3
 ```
 
 **Documentation constraint:** the existing script checks that literal heading. An unversioned product title fails validation.
@@ -43,13 +43,13 @@ Keep the Java namespace `soapui.systemtheme` and the published plugin ID stable 
 Run from the repository root with a working Windows desktop, SoapUI 5.10.0 and a JDK 17 or newer:
 
 ```powershell
-.\release.ps1 -Version 0.3.2
+.\release.ps1 -Version 0.3.3
 ```
 
 If automatic detection fails:
 
 ```powershell
-.\release.ps1 -Version 0.3.2 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'
+.\release.ps1 -Version 0.3.3 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'
 ```
 
 Use your installed paths. An older SoapUI directory name is acceptable when it contains `bin\soapui-5.10.0.jar`.
@@ -84,7 +84,7 @@ Extract the complete archive into an empty directory. Its contents start at the 
 ```text
 SoapUI-System-Theme.zip
 ├── dist/
-│   └── soapui-system-theme-0.3.2.jar
+│   └── soapui-system-theme-0.3.3.jar
 ├── Install.ps1
 ├── Uninstall.ps1
 ├── README.md
@@ -166,10 +166,10 @@ If any source or packaged document changes after validation, run `release.ps1` a
 For a **new** version, either create its `v<version>` tag on that exact commit in GitHub's release form,
 or create and push an annotated tag locally after committing/pushing the reviewed source.
 The local sequence is shown below; set the variable to the intended version whose tag does not already exist.
-The existing `v0.3.2` tag must not be recreated or moved.
+Existing version tags, including `v0.3.2`, must not be recreated or moved.
 
 ```powershell
-$releaseVersion = '0.3.2'
+$releaseVersion = '0.3.3'
 git ls-remote --tags origin "refs/tags/v$releaseVersion" "refs/tags/v$releaseVersion^{}"
 ```
 

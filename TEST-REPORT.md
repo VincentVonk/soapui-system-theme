@@ -181,3 +181,18 @@ Generated evidence: `build/menu-before-fix.log`, `build/menu-before-fix/menu-hov
 `build/menu-hover/`, `build/menu-hover-build.log`, `build/menu-hover-packaging.log` and `build/full-ui/`.
 The interactive test window must remain unobscured. Existing Windows/SoapUI compatibility limits still apply.
 No installation into the normal user profile, release preparation, commit, tag, push or publication was performed.
+
+
+## Version 0.3.3 validation - 2 November 2026
+
+Scope: bump the central version constant and current documentation/notices to **0.3.3**, without additional runtime behavior changes.
+Historical 0.3.2 results above remain unchanged. The desktop-test launcher now removes its preceding 0.3.2 JAR from the isolated `build/ui-home` profile before copying 0.3.3, preventing duplicate plugin versions in that test profile.
+
+- Full `build.ps1`: passed with **500 explicit checks**, plus asynchronous controller, real plugin-loader and actual SoapUI desktop/import/menu/editor scenarios. The loader checks the annotation and embedded version against the source constant.
+- `tests/release.Tests.ps1`: **48 packaging/installer checks passed** for 0.3.3 in a temporary synthetic fixture, including version-consistency failure guards and installation/removal from an extracted ZIP.
+- Verified `dist/soapui-system-theme-0.3.3.jar` contains embedded version `0.3.3`, only the project implementation namespace and byte-identical copies of the nine license/notice files.
+- The isolated desktop-test profile contains only `soapui-system-theme-0.3.3.jar` after the run. The normal user profile was not modified.
+- All 34 locally resolvable link targets in the current guides/notices exist; `git diff --check` passed.
+
+Logs: `build/version-0.3.3-build.log` and `build/version-0.3.3-packaging.log` (ignored generated output).
+No repository release ZIP was regenerated, no normal installation was performed, and no commit, tag, push or publication was made.

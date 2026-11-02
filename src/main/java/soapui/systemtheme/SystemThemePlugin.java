@@ -16,7 +16,7 @@ import javax.swing.Timer;
     version = SystemThemePlugin.VERSION, minimumSoapUIVersion = "5.10.0", autoDetect = false,
     description = "Follow Windows app light/dark mode; restore SoapUI's original light appearance.")
 public final class SystemThemePlugin extends PluginAdapter {
-    public static final String VERSION = "0.3.2";
+    public static final String VERSION = "0.3.3";
     private static ThemeController controller;
     private static Timer startup;
 

@@ -1,6 +1,6 @@
 # Development and technical notes
 
-Technical documentation for SoapUI System Theme **0.3.2**.
+Technical documentation for SoapUI System Theme **0.3.3**.
 For installation and everyday use, start with the [README](../README.md).
 For distribution, use the [manual release guide](RELEASING.md).
 
@@ -34,7 +34,7 @@ Use paths that exist on your machine. `SoapUiHome` is the directory containing `
 An upgraded installation can retain an older directory name; the build checks for `bin\soapui-5.10.0.jar`.
 It tries `JAVA_HOME` and the supported Program Files locations for a JDK when `-JdkHome` is omitted.
 
-The output is `dist\soapui-system-theme-0.3.2.jar`.
+The output is `dist\soapui-system-theme-0.3.3.jar`.
 The build clears compiled classes, test classes and copied resources before compiling, so obsolete files cannot enter a later JAR.
 It includes `LICENSE`, `THIRD_PARTY_NOTICES.md` and `licenses/` under `META-INF/`, without embedding host libraries.
 

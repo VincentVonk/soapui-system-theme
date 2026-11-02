@@ -1,6 +1,6 @@
 # Third-party notices
 
-Reviewed for the source publication of SoapUI System Theme 0.3.2 on 23 October 2026.
+Prepared for SoapUI System Theme 0.3.3. The dependency inventory was reviewed on 23 October 2026.
 
 ## Original project code
 

@@ -1,4 +1,4 @@
-# SoapUI System Theme 0.3.2
+# SoapUI System Theme 0.3.3
 
 **Dark mode for SoapUI Open Source, without rebuilding SoapUI.**
 Automatically follow the Windows **application theme**, or choose **Light** or **Dark** from the Theme menu.
@@ -40,7 +40,7 @@ No administrator privileges are required for the default installation directory.
 2. Extract the **entire archive**, keeping `dist/`, the scripts and license files together.
 3. Close SoapUI.
 4. Remove any older `soapui-system-theme-*.jar` from `%USERPROFILE%\.soapuios\plugins`. Keep only one version installed.
-5. Copy `dist\soapui-system-theme-0.3.2.jar` into `%USERPROFILE%\.soapuios\plugins`. Create the directory if needed.
+5. Copy `dist\soapui-system-theme-0.3.3.jar` into `%USERPROFILE%\.soapuios\plugins`. Create the directory if needed.
 6. Start SoapUI Open Source 5.10.0 and select **Theme > Follow Windows**.
 
 Alternatively, after closing SoapUI and removing any older plugin version, open PowerShell in the extracted folder:
@@ -102,7 +102,7 @@ See the [technical notes and limitations](https://github.com/VincentVonk/soapui-
 | PowerShell or security policy blocks execution | Install by copying the JAR manually. If the native title-bar helper is blocked, the Swing theme can still work. Follow your organization's policy. |
 | You want the original appearance | Select **Light (SoapUI default)**. To remove the plugin, use the uninstall steps below. |
 
-To uninstall, close SoapUI, remove `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.2.jar`, and restart it.
+To uninstall, close SoapUI, remove `%USERPROFILE%\.soapuios\plugins\soapui-system-theme-0.3.3.jar`, and restart it.
 You can also run `.\Uninstall.ps1` from the extracted folder. The saved preference is retained;
 remove `system-theme.properties` separately only if you also want to clear it.
 
