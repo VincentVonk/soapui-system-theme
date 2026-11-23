@@ -40,7 +40,7 @@ Keep the Java namespace `soapui.systemtheme` and the published plugin ID stable 
 
 ## 2. Prepare and validate the binary ZIP
 
-Run from the repository root with a working Windows desktop, SoapUI 5.10.0 and a JDK 17 or newer:
+Run from the repository root with a working Windows desktop, SoapUI 5.10.0 or 5.10.1, and a JDK 17 or newer:
 
 ```powershell
 .\release.ps1 -Version 0.3.3
@@ -52,7 +52,7 @@ If automatic detection fails:
 .\release.ps1 -Version 0.3.3 -SoapUiHome 'C:\Program Files\SmartBear\SoapUI-5.10.0' -JdkHome 'C:\Program Files\Java\jdk-27.0.1.0.2'
 ```
 
-Use your installed paths. An older SoapUI directory name is acceptable when it contains `bin\soapui-5.10.0.jar`.
+Use your installed paths. The build identifies SoapUI by the JAR in `bin/`, so an upgraded installation can retain its old directory name. Auto-detection prefers 5.10.1. Use `-SoapUiHome` to select a specific installation.
 
 Every release preparation calls `build.ps1` with **all tests enabled**, including `test-ui.ps1` and its actual SoapUI desktop scenario.
 There is no `release.ps1 -SkipTests` option. A successful compilation-only build is insufficient.

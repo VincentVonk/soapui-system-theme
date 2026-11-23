@@ -39,7 +39,7 @@ The web test loads bundled resources with page scripts initially disabled, then 
 
 ## Limits
 
-Only SoapUI Open Source 5.10.0 is validated. These checks do not establish that every dialog, chart or third-party plugin is covered. The native Windows title bar, other embedded web pages, images and custom graph drawing can retain their own appearance. Semantic icon colours are retained where possible. A brief light flash during initial startup/page loading remains possible.
+The initial 0.3.1 run validated SoapUI Open Source 5.10.0. These checks do not establish that every dialog, chart or third-party plugin is covered. The native Windows title bar, other embedded web pages, images and custom graph drawing can retain their own appearance. Semantic icon colours are retained where possible. A brief light flash during initial startup/page loading remains possible.
 
 The official online starter URL is included in the stylesheet allowlist, but the live online page could not be downloaded/rendered in this environment. Its full visual appearance is unverified. The actual bundled offline starter page and Endpoint Explorer were rendered and checked.
 
@@ -196,3 +196,20 @@ Historical 0.3.2 results above remain unchanged. The desktop-test launcher now r
 
 Logs: `build/version-0.3.3-build.log` and `build/version-0.3.3-packaging.log` (ignored generated output).
 No repository release ZIP was regenerated, no normal installation was performed, and no commit, tag, push or publication was made.
+
+
+## SoapUI 5.10.1 compatibility - 23 November 2026
+
+On Windows 11 with SoapUI's bundled Java 17.0.12 runtime, the existing 0.3.3 release JAR passed all
+500 explicit checks plus the controller, real plugin-loader and desktop scenarios against SoapUI 5.10.1.
+That run used a temporary copy of the test harness with the host selection updated to 5.10.1.
+
+The checked-in build and desktop test launchers now share SoapUI installation detection for
+5.10.0 and 5.10.1. A second run via the normal `build.ps1` command auto-detected 5.10.1 and passed
+the same 500 checks plus the controller, loader and desktop scenarios on the rebuilt JAR.
+All 48 packaging checks passed separately. Directory fixtures verified preference for 5.10.1,
+explicit selection of 5.10.0, and rejection of unsupported, incomplete and missing installations.
+The laptop has only 5.10.1 installed. The full 5.10.0 result is from the earlier 0.3.3 validation above.
+
+Logs from the second run are under `build/soapui-5.10.1-repo-build.log` and
+`build/soapui-5.10.1-repo-packaging.log`.

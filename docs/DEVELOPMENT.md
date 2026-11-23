@@ -7,13 +7,13 @@ For distribution, use the [manual release guide](RELEASING.md).
 ## Development prerequisites
 
 - Windows with an interactive desktop session.
-- SoapUI Open Source **5.10.0**, including its `bin/`, `lib/` and bundled Java runtime.
+- SoapUI Open Source **5.10.0 or 5.10.1**, including its `bin/`, `lib/` and bundled Java runtime.
 - A **JDK 17 or newer** with `javac.exe`, `jar.exe` and `java.exe`. A JRE alone cannot compile the plugin.
 - PowerShell to run the repository's build and test scripts.
 
 The build uses installed SoapUI libraries; Maven and dependency downloads are not required.
 Java is compiled with `--release 17` for SoapUI's Java 17 runtime.
-Only SoapUI 5.10.0 has been validated. Later versions need separate checks, even though the plugin metadata specifies a minimum of 5.10.0.
+Both SoapUI 5.10.0 and 5.10.1 have passed the regression suite. The plugin metadata specifies a minimum of 5.10.0.
 ReadyAPI is not separately supported.
 
 ## Building from source
@@ -31,7 +31,7 @@ If automatic detection fails, specify the installation directories:
 ```
 
 Use paths that exist on your machine. `SoapUiHome` is the directory containing `bin` and `lib`.
-An upgraded installation can retain an older directory name; the build checks for `bin\soapui-5.10.0.jar`.
+An upgraded installation can retain an older directory name. The build and desktop tests identify the version from `bin\soapui-5.10.0.jar` or `bin\soapui-5.10.1.jar`. Auto-detection prefers 5.10.1 when both versions are installed. Use `-SoapUiHome` to select a specific installation.
 It tries `JAVA_HOME` and the supported Program Files locations for a JDK when `-JdkHome` is omitted.
 
 The output is `dist\soapui-system-theme-0.3.3.jar`.
@@ -183,7 +183,7 @@ The recorded native validation was on Windows 11 build 26100; Windows 10 was not
 
 ## Technical limitations
 
-Only SoapUI Open Source 5.10.0 has been validated. Test coverage does not establish support for every dialog, screen or third-party plugin.
+SoapUI Open Source 5.10.0 and 5.10.1 have been validated. Other versions, dialogs outside the test suite, and third-party plugins need separate checks.
 Native Windows dialogs, some legacy/custom-painted components, charts and other embedded web pages can retain their own colors.
 Images are not recolored; colors with semantic meaning are preserved where possible.
 Accent colors, high-contrast settings and other OS customizations can affect native appearance.

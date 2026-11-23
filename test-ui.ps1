@@ -3,6 +3,9 @@
 
 param([Parameter(Mandatory=$true)][string]$SoapUiHome)
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'scripts\SoapUiInstallation.ps1')
+$soapUi = Resolve-SoapUiInstallation -SoapUiHome $SoapUiHome
+$SoapUiHome = $soapUi.Home
 $pluginSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'src/main/java/soapui/systemtheme/SystemThemePlugin.java') -Raw
 $versionMatch = [regex]::Match($pluginSource, '\bVERSION\s*=\s*"(\d+\.\d+\.\d+)"')
 if (-not $versionMatch.Success) { throw 'Cannot read the central plugin VERSION.' }
@@ -23,7 +26,7 @@ $previousSourceJar = Join-Path $plugins 'soapui-system-theme-0.3.2.jar'
 if (Test-Path -LiteralPath $previousSourceJar) { Remove-Item -LiteralPath $previousSourceJar }
 Copy-Item -LiteralPath (Join-Path $base "dist\soapui-system-theme-$version.jar") -Destination (Join-Path $plugins "soapui-system-theme-$version.jar") -Force
 'mode=LIGHT' | Set-Content -LiteralPath (Join-Path $uiHome '.soapuios\system-theme.properties')
-$cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')
+$cp = $soapUi.Jar + ';' + (Join-Path $SoapUiHome 'lib\*')
 $nativeOptions = @()
 if (Test-Path -LiteralPath (Join-Path $base 'build\native-titlebar\supported')) { $nativeOptions = @('-Dsoapui.theme.testNativeTitleBar=true') }
 & (Join-Path $SoapUiHome 'jre\bin\java.exe') '-Djava.awt.headless=false' @nativeOptions "-Duser.home=$uiHome" "-Djava.io.tmpdir=$(Join-Path $base 'build\tmp')" "-Dsoapui.home=$(Join-Path $SoapUiHome 'bin')" --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.desktop/java.beans=ALL-UNNAMED -cp "$(Join-Path $base 'build\test-classes');$cp" soapui.systemtheme.FullUiTests (Join-Path $base 'build\full-ui')

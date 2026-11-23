@@ -34,6 +34,7 @@ public final class FullUiTests {
     }
     private static void run(String[] args) throws Exception {
         System.setProperty("java.util.prefs.PreferencesFactory", "soapui.systemtheme.MemoryPreferencesFactory");
+        String hostVersion = (String) SoapUI.class.getField("SOAPUI_VERSION").get(null);
         output = Path.of(args[0]); Files.createDirectories(output);
         Path home = Path.of(System.getProperty("user.home")); Files.createDirectories(home);
         Path settings = home.resolve("soapui-settings.xml");
@@ -64,7 +65,7 @@ public final class FullUiTests {
             if(window!=null) { window.setFocusableWindowState(false);window.setAutoRequestFocus(false);if(!capturingNative)window.setLocation(-10000,-10000); }
         }, AWTEvent.WINDOW_EVENT_MASK | AWTEvent.CONTAINER_EVENT_MASK | AWTEvent.HIERARCHY_EVENT_MASK);
         SwingUtilities.invokeAndWait(() -> {
-            try { SoapUI.startSoapUI(new String[0], "SoapUI 5.10.0 — isolated plugin test", core); }
+            try { SoapUI.startSoapUI(new String[0], "SoapUI " + hostVersion + " — isolated plugin test", core); }
             catch (Exception e) { throw new RuntimeException(e); }
             SoapUI.getFrame().setSize(1200,800); SoapUI.getFrame().validate();
         });
@@ -132,7 +133,7 @@ public final class FullUiTests {
         });
         nativeSnapshot("soapui-native-restored.png", false);
         SwingUtilities.invokeAndWait(() -> { preferences.dispose();newProject.dispose();SoapUI.getFrame().dispose(); });
-        System.out.println("PASS: actual SoapUI 5.10.0 desktop, About, Preferences, New SOAP Project, new dialog events and restoration (isolated profile)");
+        System.out.println("PASS: actual SoapUI " + hostVersion + " desktop, About, Preferences, New SOAP Project, new dialog events and restoration (isolated profile)");
     }
     /** Isolate the old algorithm against the real host, then put every menu back immediately. */
     private static void reproduceLegacyMenuFailure(com.eviware.soapui.impl.wsdl.WsdlProject project) throws Exception {

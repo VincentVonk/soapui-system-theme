@@ -8,13 +8,10 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-if (-not $SoapUiHome) {
-    $candidates = @(Get-ChildItem -Path "$env:ProgramFiles\SmartBear\SoapUI*", "$env:ProgramFiles\SoapUI*" -Directory -ErrorAction SilentlyContinue)
-    $SoapUiHome = $candidates | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\soapui-5.10.0.jar') } | Select-Object -First 1 -ExpandProperty FullName
-}
-if (-not $SoapUiHome -or -not (Test-Path -LiteralPath (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar'))) {
-    throw 'Specify -SoapUiHome pointing to SoapUI Open Source 5.10.0 (the folder containing bin and lib).'
-}
+. (Join-Path $PSScriptRoot 'scripts\SoapUiInstallation.ps1')
+$soapUi = Resolve-SoapUiInstallation -SoapUiHome $SoapUiHome
+$SoapUiHome = $soapUi.Home
+Write-Host "Using SoapUI Open Source $($soapUi.Version): $($soapUi.Jar)"
 if (-not $JdkHome) {
     if ($env:JAVA_HOME -and (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME 'bin\javac.exe'))) { $JdkHome = $env:JAVA_HOME }
     else {
@@ -46,7 +43,7 @@ foreach ($directory in $classes,$testClasses,$resources) {
     if (Test-Path -LiteralPath $resolved) { Remove-Item -LiteralPath $resolved -Recurse -Force }
 }
 New-Item -ItemType Directory -Path $classes,$testClasses,$dist,$temporary,$notices -Force | Out-Null
-$cp = (Join-Path $SoapUiHome 'bin\soapui-5.10.0.jar') + ';' + (Join-Path $SoapUiHome 'lib\*')
+$cp = $soapUi.Jar + ';' + (Join-Path $SoapUiHome 'lib\*')
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src\main\java') -Filter '*.java' -Recurse | Select-Object -ExpandProperty FullName)
 & $javac --release 17 -encoding UTF-8 -classpath $cp -d $classes @sources
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
@@ -86,7 +83,7 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw 'Automatic switching integration tests failed.' }
     & $testJava '-Djava.awt.headless=false' "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$classes;$resources;$cp" soapui.systemtheme.WindowsTitleBarTests (Join-Path $root 'build\native-titlebar')
     if ($LASTEXITCODE -ne 0) { throw 'Native Windows title-bar integration tests failed.' }
-    & $testJava '-Djava.awt.headless=true' "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$cp" com.eviware.soapui.plugins.PluginLoadTest $output
+    & $testJava '-Djava.awt.headless=true' "-Dsoapui.theme.expectedHostVersion=$($soapUi.Version)" "-Djava.io.tmpdir=$temporary" "-Duser.home=$(Join-Path $root 'build\test-home')" -classpath "$testClasses;$cp" com.eviware.soapui.plugins.PluginLoadTest $output
     if ($LASTEXITCODE -ne 0) { throw 'SoapUI plugin-loader integration test failed.' }
     & (Join-Path $root 'test-ui.ps1') -SoapUiHome $SoapUiHome
 }

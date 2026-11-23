@@ -2,7 +2,7 @@
 
 **Dark mode for SoapUI Open Source, without rebuilding SoapUI.**
 Automatically follow the Windows **application theme**, or choose **Light** or **Dark** from the Theme menu.
-Built and validated with **SoapUI Open Source 5.10.0**.
+Validated with **SoapUI Open Source 5.10.0 and 5.10.1**.
 
 ## Download
 
@@ -41,7 +41,7 @@ No administrator privileges are required for the default installation directory.
 3. Close SoapUI.
 4. Remove any older `soapui-system-theme-*.jar` from `%USERPROFILE%\.soapuios\plugins`. Keep only one version installed.
 5. Copy `dist\soapui-system-theme-0.3.3.jar` into `%USERPROFILE%\.soapuios\plugins`. Create the directory if needed.
-6. Start SoapUI Open Source 5.10.0 and select **Theme > Follow Windows**.
+6. Start SoapUI Open Source and select **Theme > Follow Windows**.
 
 Alternatively, after closing SoapUI and removing any older plugin version, open PowerShell in the extracted folder:
 
@@ -59,8 +59,8 @@ Restart SoapUI after installation; ordinary theme switches do not need a restart
 | --- | --- |
 | Windows 10 | Windows app-theme support is implemented; not separately validated in the recorded test runs. Native title bars retain their ordinary appearance. |
 | Windows 11 | Validated on build 26100. Native dark title bars require build 22000 or later and an available Windows helper. |
-| SoapUI Open Source 5.10.0 | Validated with its bundled Java 17 runtime. |
-| Later SoapUI versions | Not validated; the metadata's minimum-version setting is not a compatibility guarantee. |
+| SoapUI Open Source 5.10.0 and 5.10.1 | Validated with bundled Java 17. |
+| SoapUI versions newer than 5.10.1 | Not validated. |
 | ReadyAPI | Not separately supported. |
 
 The plugin uses libraries supplied by your SoapUI installation. No SoapUI or third-party JARs are bundled.
@@ -95,7 +95,7 @@ See the [technical notes and limitations](https://github.com/VincentVonk/soapui-
 
 | Symptom | What to check |
 | --- | --- |
-| The Theme menu does not appear | Use SoapUI Open Source 5.10.0, confirm the JAR is in `%USERPROFILE%\.soapuios\plugins`, and restart SoapUI. |
+| The Theme menu does not appear | Use SoapUI Open Source 5.10.0 or 5.10.1, confirm the JAR is in `%USERPROFILE%\.soapuios\plugins`, and restart SoapUI. |
 | Several plugin versions are installed | Close SoapUI and keep only the intended `soapui-system-theme-*.jar`. The installer refuses a different version alongside it. |
 | Dark mode does not follow Windows | Select **Follow Windows**, change the Windows **application** theme and allow a few seconds. Changing only the taskbar/system theme is insufficient. Try manual **Dark** to check the plugin separately. |
 | The native title bar stays light | Windows 10 keeps ordinary title bars. On Windows 11, allow the first update a few seconds; unsupported windows or a restricted helper may retain their original frame. |
